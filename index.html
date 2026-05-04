@@ -6,91 +6,82 @@
 <title>Napi Office Dashboard</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
 
-/* 🌈 DARK MODERN BACKGROUND */
-body{
-    background: radial-gradient(circle at top, #0f172a, #020617);
-    font-family: "Segoe UI";
-    color: #e5e7eb;
+/* Background */
+body {
+    background: linear-gradient(135deg, #667eea, #43cea2);
+    font-family: 'Segoe UI';
 }
 
-/* HEADER */
-.header{
-    background: linear-gradient(135deg,#1e3a8a,#2563eb);
-    padding:12px 18px;
-    border-radius:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+/* Header */
+.header {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    margin-bottom: 15px;
 }
 
-/* MAIN BOX */
-.container-box{
-    background: rgba(255,255,255,0.06);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius:16px;
-    padding:20px;
+/* Clock */
+#liveClock {
+    font-size: 0.85rem;
+    text-align: right;
+    font-weight: 600;
 }
 
-/* INPUTS */
-.form-control, .form-select{
-    background:#0b1220;
-    border:1px solid #1f2937;
-    color:white;
+/* Main container */
+.container-box {
+    background: linear-gradient(135deg, #ffffff, #f0f9ff);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
 }
 
-/* CARDS */
-.counter-card{
-    border-radius:14px;
-    padding:18px;
+/* Counters */
+.counter-card {
     text-align:center;
-    font-weight:600;
-    transition:0.3s;
-    box-shadow:0 10px 25px rgba(0,0,0,0.25);
-}
-.counter-card:hover{ transform:translateY(-5px); }
-
-.big-number{ font-size:2rem; font-weight:800; }
-
-/* COLORS */
-.bg-pending{ background: linear-gradient(135deg,#f59e0b,#f97316); }
-.bg-complete{ background: linear-gradient(135deg,#10b981,#059669); }
-.bg-total{ background: linear-gradient(135deg,#3b82f6,#1d4ed8); }
-
-/* TABLE DARK */
-.table{
-    color:#e5e7eb;
+    padding:15px;
     border-radius:12px;
-    overflow:hidden;
+    transition:0.3s;
 }
-.table thead{
-    background:#111827;
-    color:white;
+.counter-card:hover {
+    transform: translateY(-4px);
 }
-.table tbody tr{
-    background:#0b1220;
-}
-.table tbody tr:nth-child(even){
-    background:#0f172a;
-}
-.table tbody tr:hover{
-    background:#1f2937;
+.big-number {
+    font-size:2rem;
+    font-weight:800;
 }
 
-/* BADGES */
-.badge{
-    padding:6px 10px;
-    border-radius:20px;
-}
-.badge-pending{ background:#f59e0b; }
-.badge-complete{ background:#10b981; }
+/* Counter colors */
+.bg-pending { background: linear-gradient(135deg,#fbbf24,#f59e0b); }
+.bg-complete { background: linear-gradient(135deg,#34d399,#059669); }
+.bg-total { background: linear-gradient(135deg,#60a5fa,#2563eb); }
 
-/* TITLE */
-h5{
-    margin-top:20px;
+/* Table */
+.table {
+    border-radius: 10px;
+    overflow: hidden;
 }
+.table thead {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    color: white;
+}
+.table tbody tr:nth-child(odd) {
+    background-color: #f1f5f9;
+}
+.table tbody tr:nth-child(even) {
+    background-color: #e2e8f0;
+}
+.table tbody tr:hover {
+    background: #bae6fd !important;
+    transition: 0.2s;
+}
+
+/* Badges */
+.badge-pending { background:#f59e0b; }
+.badge-complete { background:#16a34a; }
 
 </style>
 </head>
@@ -100,39 +91,39 @@ h5{
 <div class="container mt-4">
 
 <!-- HEADER -->
-<div class="header d-flex justify-content-between align-items-center mb-3">
+<div class="header d-flex justify-content-between align-items-center">
     <div>
         <h5 class="mb-0">नापी कार्यालय डिल्लीबजार</h5>
         <small>File Tracking Dashboard</small>
     </div>
-    <div id="clock"></div>
+    <div id="liveClock"></div>
 </div>
 
 <div class="container-box">
 
 <!-- FILTER -->
-<div class="row g-2 mb-3">
+<div class="row mb-3">
     <div class="col-md-6">
-        <input id="search" class="form-control" placeholder="🔍 Search files...">
+        <input type="text" id="search" class="form-control" placeholder="🔍 Search files...">
     </div>
-
     <div class="col-md-4">
         <select id="employeeFilter" class="form-select">
-            <option value="">All Employees</option>
+            <option value="">👨‍💼 All Employees</option>
         </select>
     </div>
-
     <div class="col-md-2 d-flex gap-2">
-        <button class="btn btn-success w-100" onclick="exportCSV()">⬇</button>
-        <button class="btn btn-dark w-100" onclick="window.print()">🖨</button>
+        <button class="btn btn-success w-100" onclick="exportExcel()">📥</button>
+        <button class="btn btn-dark w-100" onclick="window.print()">🖨️</button>
     </div>
 </div>
 
 <!-- COUNTERS -->
-<div class="row g-3 mb-3" id="counters"></div>
+<div id="counters" class="row g-3 mb-4"></div>
 
-<h5>📌 Pending (<span id="pendingCount"></span>)</h5>
+<h5 class="text-warning">📌 Pending (<span id="pendingCount"></span>)</h5>
 <div id="pendingTable"></div>
+
+<hr>
 
 <h5 class="text-success">✅ Completed (<span id="completedCount"></span>)</h5>
 <div id="completedTable"></div>
@@ -142,131 +133,147 @@ h5{
 
 <script>
 
-const FILE_URL = "files.xlsx"; // place in same folder
+const SHEET_ID = "1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
 let fullData = [];
-let selectedEmployee = "";
 
-/* CLOCK */
-setInterval(()=>{
-    const d = new Date();
-    document.getElementById("clock").innerHTML =
-        d.toLocaleDateString() + "<br>" + d.toLocaleTimeString();
-},1000);
+/* Clock */
+function updateClock(){
+    const now = new Date();
+    const date = `${2083}/${now.getMonth()+1}/${now.getDate()}`;
+    const time = now.toLocaleTimeString('en-US',{hour12:true});
 
-/* SAFE HTML */
-function esc(s){
-    return String(s||"")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;");
+    document.getElementById("liveClock").innerHTML =
+        `${date}<br>${time}`;
 }
+setInterval(updateClock,1000);
+updateClock();
 
-/* LOAD EXCEL */
-async function load(){
-    const res = await fetch(FILE_URL);
-    const buf = await res.arrayBuffer();
+/* CSV parser */
+function parseCSV(text){
+    const rows = text.split("\n").map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+    const headers = rows[0];
 
-    const wb = XLSX.read(buf,{type:"array"});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    fullData = XLSX.utils.sheet_to_json(ws);
-
-    const employees = [...new Set(fullData.map(r=>r['फाटवाला कर्मचारी']).filter(Boolean))];
-
-    const sel = document.getElementById("employeeFilter");
-    sel.innerHTML = `<option value="">All Employees</option>` +
-        employees.map(e=>`<option ${e===selectedEmployee?'selected':''}>${e}</option>`).join("");
-
-    render();
-}
-
-/* FILTER */
-function getFiltered(){
-    const q = document.getElementById("search").value.toLowerCase();
-
-    return fullData.filter(r=>{
-        const text = Object.values(r).join(" ").toLowerCase();
-        const empOk = !selectedEmployee || r['फाटवाला कर्मचारी']===selectedEmployee;
-        return text.includes(q) && empOk;
+    return rows.slice(1).map(r=>{
+        let obj={};
+        headers.forEach((h,i)=> obj[h.trim()] = (r[i] || "").replace(/"/g,''));
+        return obj;
     });
 }
 
-/* TABLE */
-function table(data){
-    return `
-    <table class="table table-hover">
-    <thead>
-    <tr>
-        <th>दर्ता नं.</th>
-        <th>विषय</th>
-        <th>नाम</th>
-        <th>कर्मचारी</th>
-        <th>स्थिति</th>
-    </tr>
-    </thead>
-    <tbody>
-    ${data.map(r=>{
-        const st = String(r['कामको अवस्था']||"").toLowerCase();
-        const badge = st.includes("comp")
-            ? `<span class="badge badge-complete">Complete</span>`
-            : `<span class="badge badge-pending">Pending</span>`;
+/* Filters */
+function applyFilters(data){
+    const keyword = document.getElementById("search").value.toLowerCase();
+    const emp = document.getElementById("employeeFilter").value;
 
-        return `
-        <tr>
-            <td>${esc(r['निवेदन दर्ता नं.'])}</td>
-            <td>${esc(r['विषय'])}</td>
-            <td>${esc(r['निवेदकको नाम थर'])}</td>
-            <td>${esc(r['फाटवाला कर्मचारी'])}</td>
-            <td>${badge}</td>
-        </tr>`;
-    }).join("")}
-    </tbody>
-    </table>`;
+    return data.filter(r=>{
+        const textMatch = Object.values(r).some(v =>
+            String(v).toLowerCase().includes(keyword)
+        );
+        const empMatch = !emp || r['फाटवाला कर्मचारी'] === emp;
+        return textMatch && empMatch;
+    });
 }
 
-/* RENDER */
-function render(){
-    const data = getFiltered();
+/* Table */
+function buildTable(data){
+    let html = `<table class="table table-striped table-hover">
+    <thead>
+    <tr>
+    <th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>स्थिति</th>
+    </tr></thead><tbody>`;
 
-    const pending = data.filter(r=>String(r['कामको अवस्था']||"").toLowerCase().includes("pend"));
-    const completed = data.filter(r=>String(r['कामको अवस्था']||"").toLowerCase().includes("comp"));
+    data.forEach(r=>{
+        const s = String(r['कामको अवस्था']||'').toLowerCase();
+
+        const badge = s.includes('pend')
+            ? '<span class="badge badge-pending">Pending</span>'
+            : '<span class="badge badge-complete">Complete</span>';
+
+        html += `<tr>
+        <td>${r['निवेदन दर्ता नं.']||''}</td>
+        <td>${r['विषय']||''}</td>
+        <td>${r['निवेदकको नाम थर']||''}</td>
+        <td>${r['फाटवाला कर्मचारी']||''}</td>
+        <td>${badge}</td>
+        </tr>`;
+    });
+
+    html += "</tbody></table>";
+    return html;
+}
+
+/* Load */
+function load(){
+    fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
+    .then(res=>res.text())
+    .then(csv=>{
+        fullData = parseCSV(csv);
+
+        const employees = [...new Set(fullData.map(r=>r['फाटवाला कर्मचारी']).filter(Boolean))];
+
+        document.getElementById("employeeFilter").innerHTML =
+            `<option value="">👨‍💼 All Employees</option>` +
+            employees.map(e=>`<option>${e}</option>`).join("");
+
+        render();
+    });
+}
+
+/* Render */
+function render(){
+    const data = applyFilters(fullData);
+
+    const pending = data.filter(r =>
+        String(r['कामको अवस्था']||'').toLowerCase().includes('pend')
+    );
+
+    const completed = data.filter(r =>
+        String(r['कामको अवस्था']||'').toLowerCase().includes('comp')
+    );
 
     document.getElementById("pendingCount").textContent = pending.length;
     document.getElementById("completedCount").textContent = completed.length;
 
-    document.getElementById("pendingTable").innerHTML = table(pending);
-    document.getElementById("completedTable").innerHTML = table(completed);
+    document.getElementById("pendingTable").innerHTML = buildTable(pending);
+    document.getElementById("completedTable").innerHTML = buildTable(completed);
 
     document.getElementById("counters").innerHTML = `
     <div class="col-md-4">
-        <div class="counter-card bg-pending">Pending<br><div class="big-number">${pending.length}</div></div>
+        <div class="counter-card bg-pending text-dark">
+            Pending<br><div class="big-number">${pending.length}</div>
+        </div>
     </div>
     <div class="col-md-4">
-        <div class="counter-card bg-complete">Completed<br><div class="big-number">${completed.length}</div></div>
+        <div class="counter-card bg-complete text-white">
+            Completed<br><div class="big-number">${completed.length}</div>
+        </div>
     </div>
     <div class="col-md-4">
-        <div class="counter-card bg-total">Total<br><div class="big-number">${data.length}</div></div>
+        <div class="counter-card bg-total text-white">
+            Total<br><div class="big-number">${data.length}</div>
+        </div>
     </div>`;
 }
 
-/* EXPORT */
-function exportCSV(){
-    let csv = fullData.map(r=>Object.values(r).join(",")).join("\n");
-    const blob = new Blob([csv],{type:"text/csv"});
+/* Export */
+function exportExcel(){
+    let csv = "";
+    fullData.forEach(r=>{
+        csv += Object.values(r).join(",") + "\n";
+    });
+
+    const blob = new Blob([csv], {type:"text/csv"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "data.csv";
+    a.download = "files.csv";
     a.click();
 }
 
-/* EVENTS */
-document.getElementById("search").addEventListener("input",()=>setTimeout(render,200));
+/* Events */
+document.getElementById("search").addEventListener("input",render);
+document.getElementById("employeeFilter").addEventListener("change",render);
 
-document.getElementById("employeeFilter").addEventListener("change",(e)=>{
-    selectedEmployee = e.target.value;
-    render();
-});
-
-/* INIT */
+/* Init */
 load();
 setInterval(load,120000);
 
