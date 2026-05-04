@@ -3,54 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Napi Office Dillibazaar</title>
+<title>Napi Office Dashboard</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
-body { background:#f8f9fa; font-family:'Segoe UI'; }
-.counter-card { text-align:center; padding:20px; border-radius:12px; }
-.big-number { font-size:3rem; font-weight:700; }
-.overdue { background:#ffe5e5 !important; }
+body {
+    background: linear-gradient(135deg, #dbeafe, #f0fdf4);
+    font-family: 'Segoe UI';
+}
+
+.container {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+/* 🔥 Top right clock */
+#liveClock {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-weight: 600;
+    color: #1e3a8a;
+    text-align: right;
+}
+
+.counter-card {
+    text-align:center;
+    padding:20px;
+    border-radius:15px;
+    transition:0.3s;
+}
+.counter-card:hover {
+    transform: translateY(-5px);
+}
+
+.big-number {
+    font-size:3rem;
+    font-weight:800;
+}
+
+.table tbody tr:hover {
+    background:#eef2ff;
+    cursor:pointer;
+}
+
+.badge-pending { background:#facc15; }
+.badge-complete { background:#22c55e; }
+
+.overdue {
+    background:#ffe5e5 !important;
+}
 </style>
 </head>
 
 <body>
-<div class="container py-4">
+<div class="container mt-4">
+
+<!-- 🔥 LIVE CLOCK -->
+<div id="liveClock"></div>
 
 <h2 class="text-center text-primary">नापी कार्यालय डिल्लीबजार</h2>
-<h5 class="text-center text-muted mb-4">File Tracking Dashboard</h5>
+<h5 class="text-center text-muted mb-4">Interactive File Dashboard</h5>
 
-<!-- FILTERS -->
-<div class="row mb-3 g-2">
-    <div class="col-md-3">
-        <input type="text" id="search" class="form-control" placeholder="Search...">
+<!-- FILTER -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <input type="text" id="search" class="form-control" placeholder="🔍 Search files...">
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <select id="employeeFilter" class="form-select">
-            <option value="">All Employees</option>
+            <option value="">👨‍💼 All Employees</option>
         </select>
-    </div>
-    <div class="col-md-2">
-        <input type="date" id="startDate" class="form-control">
-    </div>
-    <div class="col-md-2">
-        <input type="date" id="endDate" class="form-control">
     </div>
     <div class="col-md-2 d-flex gap-2">
         <button class="btn btn-success w-100" onclick="exportExcel()">📥</button>
-        <button class="btn btn-secondary w-100" onclick="window.print()">🖨️</button>
+        <button class="btn btn-dark w-100" onclick="window.print()">🖨️</button>
     </div>
 </div>
 
 <div id="counters" class="row g-3 mb-4"></div>
 
-<h5 class="text-warning">Pending (<span id="pendingCount"></span>)</h5>
+<h5 class="text-warning">📌 Pending (<span id="pendingCount"></span>)</h5>
 <div id="pendingTable"></div>
 
 <hr>
 
-<h5 class="text-success">Completed (<span id="completedCount"></span>)</h5>
+<h5 class="text-success">✅ Completed (<span id="completedCount"></span>)</h5>
 <div id="completedTable"></div>
 
 </div>
@@ -58,11 +100,22 @@ body { background:#f8f9fa; font-family:'Segoe UI'; }
 <script>
 
 const SHEET_ID = "1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
-const GID = "0";
-
 let fullData = [];
 
-// ✅ Robust CSV parser
+// 🔥 LIVE CLOCK FUNCTION
+function updateClock(){
+    const now = new Date();
+
+    const date = now.toLocaleDateString('en-GB');
+    const time = now.toLocaleTimeString('en-US', {hour12:true});
+
+    document.getElementById("liveClock").innerHTML =
+        `📅 ${date}<br>⏰ ${time}`;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// CSV parser
 function parseCSV(text){
     const rows = text.split("\n").map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
     const headers = rows[0];
@@ -74,24 +127,7 @@ function parseCSV(text){
     });
 }
 
-// ⚠️ BS date safe display only
-function formatDate(val){
-    return val || "";
-}
-
-// 🔴 Overdue highlight (only works if AD-like date)
-function isOverdue(dateStr){
-    if(!dateStr) return false;
-
-    const d = new Date(dateStr);
-    if(isNaN(d)) return false;
-
-    const today = new Date();
-    const diff = (today - d)/(1000*60*60*24);
-    return diff > 7;
-}
-
-// ✅ Filters (date filter disabled safely)
+// filter
 function applyFilters(data){
     const keyword = document.getElementById("search").value.toLowerCase();
     const emp = document.getElementById("employeeFilter").value;
@@ -100,31 +136,33 @@ function applyFilters(data){
         const textMatch = Object.values(r).some(v =>
             String(v).toLowerCase().includes(keyword)
         );
-
         const empMatch = !emp || r['फाटवाला कर्मचारी'] === emp;
 
         return textMatch && empMatch;
     });
 }
 
-// ✅ Table builder
+// table
 function buildTable(data, type){
     let html = `<table class="table table-striped table-hover">
     <thead class="${type==='pending'?'table-warning':'table-success'}">
     <tr>
-    <th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>मिति</th>
+    <th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>स्थिति</th>
     </tr></thead><tbody>`;
 
     data.forEach(r=>{
-        const d = formatDate(r['दर्ता मिति']);
-        const overdueClass = (type==='pending' && isOverdue(d)) ? "overdue":"";
+        const s = String(r['कामको अवस्था']||'').toLowerCase();
 
-        html += `<tr class="${overdueClass}">
+        const badge = s.includes('pend')
+            ? '<span class="badge badge-pending">Pending</span>'
+            : '<span class="badge badge-complete">Complete</span>';
+
+        html += `<tr>
         <td>${r['निवेदन दर्ता नं.']||''}</td>
         <td>${r['विषय']||''}</td>
         <td>${r['निवेदकको नाम थर']||''}</td>
         <td>${r['फाटवाला कर्मचारी']||''}</td>
-        <td>${d}</td>
+        <td>${badge}</td>
         </tr>`;
     });
 
@@ -132,43 +170,34 @@ function buildTable(data, type){
     return html;
 }
 
-// ✅ Load data (FIXED API)
+// load
 function load(){
-    fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`)
+    fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
     .then(res=>res.text())
     .then(csv=>{
         fullData = parseCSV(csv);
 
-        console.log("Loaded data:", fullData);
-
-        // Employee filter
         const employees = [...new Set(fullData.map(r=>r['फाटवाला कर्मचारी']).filter(Boolean))];
 
-        const select = document.getElementById("employeeFilter");
-        select.innerHTML = `<option value="">All Employees</option>` +
+        document.getElementById("employeeFilter").innerHTML =
+            `<option value="">👨‍💼 All Employees</option>` +
             employees.map(e=>`<option>${e}</option>`).join("");
 
         render();
-    })
-    .catch(err=>{
-        console.error(err);
-        alert("Error loading sheet. Make sure it's public (Anyone with link).");
     });
 }
 
-// ✅ Render dashboard
+// render
 function render(){
     const data = applyFilters(fullData);
 
-    const pending = data.filter(r=>{
-        const s = String(r['कामको अवस्था']||'').toLowerCase().trim();
-        return s.includes('pend');
-    });
+    const pending = data.filter(r =>
+        String(r['कामको अवस्था']||'').toLowerCase().includes('pend')
+    );
 
-    const completed = data.filter(r=>{
-        const s = String(r['कामको अवस्था']||'').toLowerCase().trim();
-        return s.includes('comp'); // handles "Complete"
-    });
+    const completed = data.filter(r =>
+        String(r['कामको अवस्था']||'').toLowerCase().includes('comp')
+    );
 
     document.getElementById("pendingCount").textContent = pending.length;
     document.getElementById("completedCount").textContent = completed.length;
@@ -177,13 +206,13 @@ function render(){
     document.getElementById("completedTable").innerHTML = buildTable(completed,'completed');
 
     document.getElementById("counters").innerHTML = `
-    <div class="col-md-4"><div class="card bg-warning counter-card">Pending<br><div class="big-number">${pending.length}</div></div></div>
-    <div class="col-md-4"><div class="card bg-success text-white counter-card">Completed<br><div class="big-number">${completed.length}</div></div></div>
-    <div class="col-md-4"><div class="card bg-info text-white counter-card">Total<br><div class="big-number">${data.length}</div></div></div>
+    <div class="col-md-4"><div class="card bg-warning counter-card">Pending<div class="big-number">${pending.length}</div></div></div>
+    <div class="col-md-4"><div class="card bg-success text-white counter-card">Completed<div class="big-number">${completed.length}</div></div></div>
+    <div class="col-md-4"><div class="card bg-info text-white counter-card">Total<div class="big-number">${data.length}</div></div></div>
     `;
 }
 
-// 📥 Export
+// export
 function exportExcel(){
     let csv = "";
     fullData.forEach(r=>{
@@ -197,11 +226,11 @@ function exportExcel(){
     a.click();
 }
 
-// Events
+// events
 document.getElementById("search").addEventListener("input",render);
 document.getElementById("employeeFilter").addEventListener("change",render);
 
-// Init
+// init
 load();
 setInterval(load,120000);
 
