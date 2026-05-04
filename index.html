@@ -12,10 +12,20 @@
 body {
     background: linear-gradient(135deg, #667eea, #43cea2);
     font-family: 'Segoe UI';
-    color: #222;
 }
 
-.container {
+/* 🔥 HEADER FIX */
+.header {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+/* container */
+.container-box {
     background: linear-gradient(135deg, #ffffff, #f0f9ff);
     border-radius: 15px;
     padding: 20px;
@@ -23,7 +33,7 @@ body {
     position: relative;
 }
 
-/* 🔥 Nepali Clock */
+/* clock */
 #liveClock {
     position: absolute;
     top: 15px;
@@ -34,7 +44,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* Smaller counters */
+/* smaller counters */
 .counter-card {
     text-align:center;
     padding:15px;
@@ -55,6 +65,7 @@ body {
 .bg-complete { background: linear-gradient(135deg,#34d399,#059669); }
 .bg-total { background: linear-gradient(135deg,#60a5fa,#2563eb); }
 
+/* table */
 .table tbody tr:hover {
     background:#e0f2fe;
     cursor:pointer;
@@ -67,13 +78,19 @@ body {
 </head>
 
 <body>
+
 <div class="container mt-4">
 
-<!-- 🇳🇵 CLOCK -->
-<div id="liveClock"></div>
+<!-- HEADER -->
+<div class="header">
+    <h4>नापी कार्यालय डिल्लीबजार</h4>
+    <small>File Tracking Dashboard</small>
+</div>
 
-<h2 class="text-center text-white mb-1">नापी कार्यालय डिल्लीबजार</h2>
-<h6 class="text-center text-light mb-4">File Tracking Dashboard</h6>
+<div class="container-box">
+
+<!-- CLOCK -->
+<div id="liveClock"></div>
 
 <!-- FILTER -->
 <div class="row mb-3">
@@ -102,30 +119,30 @@ body {
 <div id="completedTable"></div>
 
 </div>
+</div>
 
 <script>
 
 const SHEET_ID = "1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
 let fullData = [];
 
-// 🇳🇵 SIMPLE BS DATE (visual only)
+/* 🔥 Clean BS-style date (no label) */
 function getBSDate(){
     const now = new Date();
-    return "BS: 2083/" + (now.getMonth()+1) + "/" + now.getDate(); 
+    return `${2083}/${now.getMonth()+1}/${now.getDate()}`;
 }
 
-// Clock
 function updateClock(){
     const now = new Date();
     const time = now.toLocaleTimeString('en-US',{hour12:true});
 
     document.getElementById("liveClock").innerHTML =
-        `🇳🇵 ${getBSDate()}<br>⏰ ${time}`;
+        `${getBSDate()}<br>⏰ ${time}`;
 }
 setInterval(updateClock,1000);
 updateClock();
 
-// CSV parser
+/* CSV parser */
 function parseCSV(text){
     const rows = text.split("\n").map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
     const headers = rows[0];
@@ -137,7 +154,7 @@ function parseCSV(text){
     });
 }
 
-// filter
+/* filter */
 function applyFilters(data){
     const keyword = document.getElementById("search").value.toLowerCase();
     const emp = document.getElementById("employeeFilter").value;
@@ -147,12 +164,11 @@ function applyFilters(data){
             String(v).toLowerCase().includes(keyword)
         );
         const empMatch = !emp || r['फाटवाला कर्मचारी'] === emp;
-
         return textMatch && empMatch;
     });
 }
 
-// table
+/* table */
 function buildTable(data){
     let html = `<table class="table table-striped table-hover">
     <thead class="table-dark">
@@ -180,7 +196,7 @@ function buildTable(data){
     return html;
 }
 
-// load
+/* load */
 function load(){
     fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
     .then(res=>res.text())
@@ -197,7 +213,7 @@ function load(){
     });
 }
 
-// render
+/* render */
 function render(){
     const data = applyFilters(fullData);
 
@@ -233,7 +249,7 @@ function render(){
     </div>`;
 }
 
-// export
+/* export */
 function exportExcel(){
     let csv = "";
     fullData.forEach(r=>{
@@ -247,11 +263,11 @@ function exportExcel(){
     a.click();
 }
 
-// events
+/* events */
 document.getElementById("search").addEventListener("input",render);
 document.getElementById("employeeFilter").addEventListener("change",render);
 
-// init
+/* init */
 load();
 setInterval(load,120000);
 
