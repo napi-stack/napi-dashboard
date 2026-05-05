@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Napi Smart Dashboard TV</title>
+<title>Napi Smart Dashboard</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,13 +13,11 @@
 
 body {
     margin:0;
-    height:100vh;
     background: linear-gradient(135deg,#1e3a8a,#0ea5e9);
     font-family:'Segoe UI';
 }
 
-body.tv-mode { overflow:hidden; }
-
+/* Header */
 .header {
     height:70px;
     background: rgba(255,255,255,0.15);
@@ -28,20 +26,20 @@ body.tv-mode { overflow:hidden; }
     padding:10px 20px;
 }
 
-.dashboard { padding:10px; }
-
-body.tv-mode .dashboard {
+/* Layout */
+.dashboard {
+    padding:10px;
     height: calc(100vh - 70px);
 }
 
 .row.h-100 { height:100%; }
 
-/* ✅ Equal split */
 .col-md-6 {
     display:flex;
     flex-direction:column;
 }
 
+/* Panels */
 .panel {
     flex:1;
     min-height:0;
@@ -52,17 +50,7 @@ body.tv-mode .dashboard {
     flex-direction:column;
 }
 
-/* ✅ FIX chart stretch permanently */
-#chartSection {
-    display:flex;
-    flex-direction:column;
-    height:350px; /* fixed height */
-}
-
-#employeeChart {
-    flex:1;
-}
-
+/* Counters */
 .counter-card {
     text-align:center;
     padding:10px;
@@ -75,14 +63,11 @@ body.tv-mode .dashboard {
 .bg-complete { background:#16a34a; }
 .bg-total { background:#2563eb; }
 
+/* Tables */
 .table-container {
     flex:1;
     overflow-y:auto;
     min-height:0;
-}
-
-body:not(.tv-mode) .table-container {
-    overflow:visible;
 }
 
 .table {
@@ -104,6 +89,17 @@ body:not(.tv-mode) .table-container {
 .badge-pending { background:#f59e0b; }
 .badge-complete { background:#16a34a; }
 
+/* Chart */
+#chartSection {
+    height:300px;
+    display:flex;
+    flex-direction:column;
+}
+
+#employeeChart {
+    flex:1;
+}
+
 </style>
 </head>
 
@@ -114,11 +110,7 @@ body:not(.tv-mode) .table-container {
         <h5 class="mb-0">नापी कार्यालय डिल्लीबजार</h5>
         <small>Smart File Dashboard</small>
     </div>
-    <div class="d-flex align-items-center gap-2">
-        <div id="liveClock"></div>
-        <button class="btn btn-light btn-sm" onclick="toggleSlideshow()">▶️</button>
-        <button class="btn btn-warning btn-sm" onclick="toggleFullscreen()">⛶</button>
-    </div>
+    <div id="liveClock"></div>
 </div>
 
 <div class="container-fluid dashboard">
@@ -130,10 +122,8 @@ body:not(.tv-mode) .table-container {
 
 <div id="counters" class="row g-2 mb-2"></div>
 
-<div id="pendingSection">
 <h6 class="text-warning">📌 Pending (<span id="pendingCount"></span>)</h6>
 <div class="table-container" id="pendingTable"></div>
-</div>
 
 </div>
 </div>
@@ -149,10 +139,8 @@ body:not(.tv-mode) .table-container {
 
 <hr>
 
-<div id="completedSection">
 <h6 class="text-success">Completed (<span id="completedCount"></span>)</h6>
 <div class="table-container" id="completedTable"></div>
-</div>
 
 </div>
 </div>
@@ -275,6 +263,9 @@ const c=fullData.filter(r=>getStatus(r)==='complete');
 pendingTable.innerHTML=buildTable(p);
 completedTable.innerHTML=buildTable(c);
 
+pendingCount.textContent=p.length;
+completedCount.textContent=c.length;
+
 counters.innerHTML=`
 <div class="col-4"><div class="counter-card bg-pending">Pending<div id="pVal" class="big-number">0</div></div></div>
 <div class="col-4"><div class="counter-card bg-complete">Done<div id="cVal" class="big-number">0</div></div></div>
@@ -285,70 +276,12 @@ animateValue(document.getElementById("pVal"),0,p.length,800);
 animateValue(document.getElementById("cVal"),0,c.length,800);
 animateValue(document.getElementById("tVal"),0,fullData.length,800);
 
-pendingCount.textContent=p.length;
-completedCount.textContent=c.length;
-
 renderChart(fullData);
-}
-
-/* MODES */
-function enableTVMode(){ document.body.classList.add("tv-mode"); }
-function enableScrollMode(){ document.body.classList.remove("tv-mode"); }
-
-/* SLIDESHOW */
-let slideIndex=0, slideTimer, running=true;
-
-function showSlide(i){
-pendingSection.style.display="block";
-
-completedSection.style.display="none";
-chartSection.style.display="none";
-
-if(i===0) completedSection.style.display="block";
-if(i===1) chartSection.style.display="block";
-}
-
-function startSlideshow(){
-slideTimer=setInterval(()=>{
-slideIndex=(slideIndex+1)%2;
-showSlide(slideIndex);
-},5000);
-}
-
-function toggleSlideshow(){
-if(running){
-clearInterval(slideTimer);
-completedSection.style.display="block";
-chartSection.style.display="block";
-enableScrollMode();
-running=false;
-}else{
-slideIndex=0;
-showSlide(slideIndex);
-startSlideshow();
-enableTVMode();
-running=true;
-}
-}
-
-/* FULLSCREEN */
-function toggleFullscreen(){
-if(!document.fullscreenElement){
-document.documentElement.requestFullscreen();
-}else{
-document.exitFullscreen();
-}
 }
 
 /* INIT */
 load();
 setInterval(load,120000);
-
-enableTVMode();
-showSlide(0);
-startSlideshow();
-
-setTimeout(()=>{ toggleFullscreen(); },1000);
 
 </script>
 
