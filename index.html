@@ -17,23 +17,23 @@ body {
     font-family:'Segoe UI';
 }
 
-/* CENTERED HEADER */
+/* HEADER CENTERED */
 .header {
-    height:70px;
+    height:80px;
     background: rgba(255,255,255,0.15);
     backdrop-filter: blur(10px);
     color:white;
     display:flex;
     justify-content:center;
     align-items:center;
-    text-align:center;
     flex-direction:column;
+    text-align:center;
 }
 
 /* DASHBOARD */
 .dashboard {
     padding:10px;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 80px);
 }
 
 .col-md-6 {
@@ -66,6 +66,31 @@ body {
 .bg-pending { background:#f59e0b; }
 .bg-complete { background:#16a34a; }
 .bg-total { background:#2563eb; }
+
+/* SECTION TITLES */
+.section-title {
+    padding:8px 12px;
+    border-radius:8px;
+    font-weight:600;
+    margin-bottom:8px;
+    display:block;
+    animation: fadeSlide 0.6s ease;
+}
+
+.section-pending {
+    background: linear-gradient(90deg,#f59e0b,#fbbf24);
+    color:#1e293b;
+}
+
+.section-completed {
+    background: linear-gradient(90deg,#16a34a,#4ade80);
+    color:white;
+}
+
+@keyframes fadeSlide {
+    from {opacity:0; transform:translateY(-5px);}
+    to {opacity:1; transform:translateY(0);}
+}
 
 /* TABLE */
 .table-container {
@@ -107,17 +132,22 @@ body {
 <div class="container-fluid dashboard">
 <div class="row h-100">
 
+<!-- LEFT -->
 <div class="col-md-6">
 <div class="panel">
 
 <div id="counters" class="row g-2 mb-2"></div>
 
-<h6 class="text-warning">📌 Pending (<span id="pendingCount"></span>)</h6>
+<h6 class="section-title section-pending">
+📌 Pending (<span id="pendingCount"></span>)
+</h6>
+
 <div class="table-container" id="pendingTable"></div>
 
 </div>
 </div>
 
+<!-- RIGHT -->
 <div class="col-md-6">
 <div class="panel">
 
@@ -128,7 +158,10 @@ body {
 
 <hr>
 
-<h6 class="text-success">Completed (<span id="completedCount"></span>)</h6>
+<h6 class="section-title section-completed">
+Completed (<span id="completedCount"></span>)
+</h6>
+
 <div class="table-container" id="completedTable"></div>
 
 </div>
@@ -198,7 +231,7 @@ html+=`<tr>
 return html+"</tbody></table>";
 }
 
-/* CHART - TRUE FALL EFFECT */
+/* CHART */
 function renderChart(data){
 if(chart) chart.destroy();
 
@@ -236,13 +269,10 @@ stack:'total'
 options:{
 responsive:true,
 maintainAspectRatio:false,
-animation:{
-duration:1400,
-easing:'easeOutQuart'
-},
+animation:{duration:1400,easing:'easeOutQuart'},
 animations:{
 y:{
-from: maxY,   // 👈 THIS CREATES FALL EFFECT
+from:maxY,
 delay:(ctx)=>ctx.dataIndex*120
 }
 },
@@ -256,15 +286,13 @@ y:{stacked:true,beginAtZero:true}
 
 /* COUNTER */
 function animateValue(el,end){
-let start=0;
-let duration=900;
 let startTime=null;
+let duration=900;
 
 function step(ts){
 if(!startTime) startTime=ts;
 const progress=Math.min((ts-startTime)/duration,1);
-const value=Math.floor(progress*end);
-el.textContent=value;
+el.textContent=Math.floor(progress*end);
 if(progress<1) requestAnimationFrame(step);
 }
 requestAnimationFrame(step);
