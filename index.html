@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Napi Smart Dashboard</title>
+<title>Napi Smart Dashboard TV</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -27,21 +27,24 @@ body {
     padding:10px 20px;
 }
 
-#liveClock {
-    font-size:0.9rem;
-    text-align:right;
-}
-
 .dashboard {
     height: calc(100vh - 70px);
-    padding:15px;
+    padding:10px;
+}
+
+.row.h-100 { height:100%; }
+
+.col-md-8, .col-md-4 {
+    display:flex;
+    flex-direction:column;
 }
 
 .panel {
+    flex:1;
+    min-height:0;
     background:white;
     border-radius:15px;
-    padding:15px;
-    height:100%;
+    padding:12px;
     display:flex;
     flex-direction:column;
 }
@@ -60,7 +63,8 @@ body {
 
 .table-container {
     flex:1;
-    overflow:auto;
+    overflow-y:auto;
+    min-height:0;
 }
 
 .table {
@@ -77,13 +81,20 @@ body {
 
 .table tbody tr:nth-child(odd){ background:#334155; }
 .table tbody tr:nth-child(even){ background:#475569; }
-
-.table tbody tr:hover {
-    background:#0ea5e9 !important;
-}
+.table tbody tr:hover { background:#0ea5e9 !important; }
 
 .badge-pending { background:#f59e0b; }
 .badge-complete { background:#16a34a; }
+
+#chartSection {
+    display:flex;
+    flex-direction:column;
+    height:100%;
+}
+
+#employeeChart {
+    flex:1;
+}
 
 </style>
 </head>
@@ -98,6 +109,7 @@ body {
     <div class="d-flex align-items-center gap-2">
         <div id="liveClock"></div>
         <button class="btn btn-light btn-sm" onclick="toggleSlideshow()">▶️</button>
+        <button class="btn btn-warning btn-sm" onclick="toggleFullscreen()">⛶</button>
     </div>
 </div>
 
@@ -106,19 +118,6 @@ body {
 
 <div class="col-md-8 h-100">
 <div class="panel">
-
-<div class="row mb-2">
-    <div class="col-md-6">
-        <input id="search" class="form-control" placeholder="🔍 Search">
-    </div>
-    <div class="col-md-3">
-        <select id="employeeFilter" class="form-select"></select>
-    </div>
-    <div class="col-md-3 d-flex gap-2">
-        <button class="btn btn-success w-100" onclick="exportExcel()">📥</button>
-        <button class="btn btn-dark w-100" onclick="window.print()">🖨️</button>
-    </div>
-</div>
 
 <div id="counters" class="row g-2 mb-2"></div>
 
@@ -164,15 +163,6 @@ function updateClock(){
 }
 setInterval(updateClock,1000);
 
-/* DATE */
-function formatDate(v){
-    if(!v) return "";
-    if(!isNaN(v)){
-        return new Date((v-25569)*86400*1000).toLocaleDateString();
-    }
-    return v;
-}
-
 /* CSV */
 function parseCSV(t){
     const r=t.split("\n").map(x=>x.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
@@ -190,25 +180,8 @@ fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
 .then(r=>r.text())
 .then(csv=>{
     fullData=parseCSV(csv);
-    setupFilters();
     render();
 });
-}
-
-/* FILTER */
-function setupFilters(){
-    const e=[...new Set(fullData.map(r=>r['फाटवाला कर्मचारी']).filter(Boolean))];
-    employeeFilter.innerHTML=`<option value="">All</option>`+e.map(x=>`<option>${x}</option>`).join("");
-}
-
-function applyFilters(){
-    const k=search.value.toLowerCase();
-    const e=employeeFilter.value;
-    return fullData.filter(r=>{
-        const t=Object.values(r).some(v=>String(v).toLowerCase().includes(k));
-        const m=!e||r['फाटवाला कर्मचारी']===e;
-        return t&&m;
-    });
 }
 
 /* STATUS */
@@ -221,7 +194,7 @@ function getStatus(r){
 /* TABLE */
 function buildTable(d){
 let html=`<table class="table"><thead><tr>
-<th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>दर्ता मिति</th><th>स्थिति</th>
+<th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>स्थिति</th>
 </tr></thead><tbody>`;
 d.forEach(r=>{
 const st=getStatus(r);
@@ -233,7 +206,6 @@ html+=`<tr>
 <td>${r['विषय']||''}</td>
 <td>${r['निवेदकको नाम थर']||''}</td>
 <td>${r['फाटवाला कर्मचारी']||''}</td>
-<td>${formatDate(r['दर्ता मिति'])}</td>
 <td>${badge}</td>
 </tr>`;
 });
@@ -243,23 +215,35 @@ return html+"</tbody></table>";
 /* CHART */
 function renderChart(data){
 if(chart) chart.destroy();
-const c={};
+
+const employees={};
 data.forEach(r=>{
-const e=r['फाटवाला कर्मचारी']||'Unknown';
-c[e]=(c[e]||0)+1;
+    const e=r['फाटवाला कर्मचारी']||'Unknown';
+    if(!employees[e]) employees[e]={pending:0,complete:0};
+    const st=getStatus(r);
+    if(st==='pending') employees[e].pending++;
+    if(st==='complete') employees[e].complete++;
 });
+
+const labels=Object.keys(employees);
+
 chart=new Chart(employeeChart,{
 type:'bar',
-data:{labels:Object.keys(c),
-datasets:[{data:Object.values(c),backgroundColor:'#2563eb'}]}
+data:{
+labels:labels,
+datasets:[
+{label:'Pending',data:labels.map(e=>employees[e].pending),backgroundColor:'#f59e0b'},
+{label:'Completed',data:labels.map(e=>employees[e].complete),backgroundColor:'#16a34a'}
+]
+},
+options:{responsive:true,maintainAspectRatio:false}
 });
 }
 
 /* RENDER */
 function render(){
-const d=applyFilters();
-const p=d.filter(r=>getStatus(r)==='pending');
-const c=d.filter(r=>getStatus(r)==='complete');
+const p=fullData.filter(r=>getStatus(r)==='pending');
+const c=fullData.filter(r=>getStatus(r)==='complete');
 
 pendingCount.textContent=p.length;
 completedCount.textContent=c.length;
@@ -270,21 +254,10 @@ completedTable.innerHTML=buildTable(c);
 counters.innerHTML=`
 <div class="col-4"><div class="counter-card bg-pending">Pending<div class="big-number">${p.length}</div></div></div>
 <div class="col-4"><div class="counter-card bg-complete">Done<div class="big-number">${c.length}</div></div></div>
-<div class="col-4"><div class="counter-card bg-total">Total<div class="big-number">${d.length}</div></div></div>
+<div class="col-4"><div class="counter-card bg-total">Total<div class="big-number">${fullData.length}</div></div></div>
 `;
 
-renderChart(d);
-}
-
-/* EXPORT */
-function exportExcel(){
-let csv="";
-fullData.forEach(r=>csv+=Object.values(r).join(",")+"\n");
-const blob=new Blob([csv]);
-const a=document.createElement("a");
-a.href=URL.createObjectURL(blob);
-a.download="files.csv";
-a.click();
+renderChart(fullData);
 }
 
 /* SLIDESHOW */
@@ -315,15 +288,33 @@ completedSection.style.display="block";
 chartSection.style.display="block";
 running=false;
 }else{
+slideIndex=0;
+showSlide(slideIndex);
 startSlideshow();
 running=true;
+}
+}
+
+/* FULLSCREEN */
+function toggleFullscreen(){
+if(!document.fullscreenElement){
+document.documentElement.requestFullscreen();
+}else{
+document.exitFullscreen();
 }
 }
 
 /* INIT */
 load();
 setInterval(load,120000);
-startSlideshow();  // ✅ AUTO START
+
+showSlide(0);
+startSlideshow();
+
+/* TRY AUTO FULLSCREEN */
+setTimeout(()=>{
+toggleFullscreen();
+},1000);
 
 </script>
 
