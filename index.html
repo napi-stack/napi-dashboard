@@ -53,7 +53,7 @@ body {
     transition: transform 0.3s;
 }
 .counter-card.animate {
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 .big-number { font-size:2rem; font-weight:800; }
 
@@ -103,7 +103,6 @@ body {
 <div class="container-fluid dashboard">
 <div class="row h-100">
 
-<!-- LEFT -->
 <div class="col-md-6">
 <div class="panel">
 
@@ -115,7 +114,6 @@ body {
 </div>
 </div>
 
-<!-- RIGHT -->
 <div class="col-md-6">
 <div class="panel">
 
@@ -196,7 +194,7 @@ html+=`<tr>
 return html+"</tbody></table>";
 }
 
-/* CHART */
+/* CHART - FALLING EFFECT */
 function renderChart(data){
 if(chart) chart.destroy();
 
@@ -216,35 +214,47 @@ type:'bar',
 data:{
 labels,
 datasets:[
-{label:'Pending',data:labels.map(e=>emp[e].p),backgroundColor:'#f59e0b',stack:'s'},
-{label:'Completed',data:labels.map(e=>emp[e].c),backgroundColor:'#16a34a',stack:'s'}
+{label:'Pending',data:labels.map(e=>emp[e].p),backgroundColor:'#f59e0b'},
+{label:'Completed',data:labels.map(e=>emp[e].c),backgroundColor:'#16a34a'}
 ]
 },
 options:{
 responsive:true,
 maintainAspectRatio:false,
-animation:{duration:1200},
-scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}
+animation:{
+duration:1500,
+easing:'easeOutBounce',
+delay:(ctx)=>ctx.dataIndex*150
+},
+scales:{y:{beginAtZero:true}}
 }
 });
 }
 
-/* COUNTER ANIMATION */
+/* COUNTER (SMOOTH + OVERSHOOT) */
 function animateValue(el,end){
 let start=0;
-let duration=800;
+let duration=1000;
 let startTime=null;
+
+function easeOutExpo(x){
+return x===1?1:1-Math.pow(2,-10*x);
+}
 
 function step(ts){
 if(!startTime) startTime=ts;
 const progress=Math.min((ts-startTime)/duration,1);
-el.textContent=Math.floor(progress*end);
+const eased=easeOutExpo(progress);
+const value=Math.floor(eased*end*1.05); // overshoot
+
+el.textContent = value > end ? end : value;
+
 if(progress<1) requestAnimationFrame(step);
 }
 requestAnimationFrame(step);
 }
 
-/* PLAYFUL LOOP */
+/* PULSE */
 function pulseCounters(){
 document.querySelectorAll('.counter-card').forEach(c=>{
 c.classList.add("animate");
@@ -276,10 +286,10 @@ animateValue(tVal,fullData.length);
 renderChart(fullData);
 }
 
-/* AUTO ANIMATION LOOP */
+/* LOOP */
 setInterval(()=>{
 pulseCounters();
-renderChart(fullData); // reanimate chart
+renderChart(fullData);
 },6000);
 
 /* INIT */
