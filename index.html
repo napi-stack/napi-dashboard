@@ -14,7 +14,8 @@
 
 body {
     background: linear-gradient(135deg,#1e3a8a,#0ea5e9);
-    font-family:'Segoe UI';
+    font-family: 'Segoe UI';
+    color:#111;
 }
 
 .header {
@@ -27,8 +28,8 @@ body {
 }
 
 #liveClock {
-    text-align:right;
     font-size:0.9rem;
+    text-align:right;
 }
 
 .container-box {
@@ -38,63 +39,33 @@ body {
     box-shadow:0 20px 40px rgba(0,0,0,0.2);
 }
 
-/* headings */
-.pending-title {
-    background: linear-gradient(135deg,#fbbf24,#f59e0b);
-    padding:8px 12px;
-    border-radius:8px;
-    font-weight:700;
-}
-
-.completed-title {
-    background: linear-gradient(135deg,#34d399,#059669);
-    padding:8px 12px;
-    border-radius:8px;
+/* Counters */
+.counter-card {
+    text-align:center;
+    padding:15px;
+    border-radius:12px;
     color:white;
-    font-weight:700;
 }
+.bg-pending { background:#f59e0b; }
+.bg-complete { background:#16a34a; }
+.bg-total { background:#2563eb; }
 
-.today-title {
-    background: linear-gradient(135deg,#60a5fa,#2563eb);
-    padding:8px 12px;
-    border-radius:8px;
-    color:white;
-    font-weight:700;
-}
+.big-number { font-size:2rem; font-weight:800; }
 
-/* table */
+/* Table */
 .table-container {
-    max-height:320px;
+    max-height:350px;
     overflow-y:auto;
 }
 
 thead {
     position:sticky;
     top:0;
-    background:#111827;
-    color:white;
+    z-index:5;
 }
 
-/* badges */
 .badge-pending { background:#f59e0b; }
 .badge-complete { background:#16a34a; }
-
-/* counters */
-.counter-card {
-    text-align:center;
-    padding:15px;
-    border-radius:10px;
-    color:white;
-}
-
-.bg-pending { background:#f59e0b; }
-.bg-complete { background:#16a34a; }
-.bg-total { background:#2563eb; }
-
-.big-number {
-    font-size:2rem;
-    font-weight:800;
-}
 
 </style>
 </head>
@@ -113,7 +84,6 @@ thead {
 
 <div class="container-box">
 
-<!-- FILTER -->
 <div class="row mb-3">
     <div class="col-md-5">
         <input id="search" class="form-control" placeholder="🔍 Search">
@@ -122,34 +92,31 @@ thead {
         <select id="employeeFilter" class="form-select"></select>
     </div>
     <div class="col-md-4 d-flex gap-2">
-        <button class="btn btn-primary w-100" onclick="load()">🔄</button>
+        <button class="btn btn-primary w-100" onclick="load()">🔄 Refresh</button>
         <button class="btn btn-success w-100" onclick="exportExcel()">📥</button>
         <button class="btn btn-dark w-100" onclick="window.print()">🖨️</button>
     </div>
 </div>
 
-<!-- COUNTERS -->
+<!-- Counters -->
 <div id="counters" class="row g-3 mb-4"></div>
 
-<!-- CHART -->
-<div class="mb-4">
-    <canvas id="employeeChart"></canvas>
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <canvas id="statusChart"></canvas>
+    </div>
+    <div class="col-md-6">
+        <canvas id="employeeChart"></canvas>
+    </div>
 </div>
 
-<!-- TODAY -->
-<h5 class="today-title">🆕 आजका नयाँ दर्ता (<span id="todayCount"></span>)</h5>
-<div class="table-container" id="todayTable"></div>
-
-<hr>
-
-<!-- PENDING -->
-<h5 class="pending-title">📌 Pending (<span id="pendingCount"></span>)</h5>
+<h5 class="text-warning">📌 Pending (<span id="pendingCount"></span>)</h5>
 <div class="table-container" id="pendingTable"></div>
 
 <hr>
 
-<!-- COMPLETED -->
-<h5 class="completed-title">✅ Completed (<span id="completedCount"></span>)</h5>
+<h5 class="text-success">✅ Completed (<span id="completedCount"></span>)</h5>
 <div class="table-container" id="completedTable"></div>
 
 </div>
@@ -161,16 +128,17 @@ const SHEET_ID = "1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
 let fullData = [];
 let lastLoad = 0;
 
-/* clock */
+/* BS Clock */
 function updateClock(){
     const now = new Date();
     const bs = NepaliDate.fromAD(now);
+    const time = now.toLocaleTimeString();
     document.getElementById("liveClock").innerHTML =
-        `${bs.format('YYYY/MM/DD')}<br>${now.toLocaleTimeString()}`;
+        `${bs.format('YYYY/MM/DD')}<br>${time}`;
 }
 setInterval(updateClock,1000);
 
-/* csv */
+/* CSV */
 function parseCSV(text){
     const rows = text.split("\n").map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
     const headers = rows[0];
@@ -182,7 +150,7 @@ function parseCSV(text){
     });
 }
 
-/* load */
+/* Load */
 function load(){
     const now = Date.now();
     if(now - lastLoad < 60000) return;
@@ -197,7 +165,7 @@ function load(){
     });
 }
 
-/* filters */
+/* Filters */
 function setupFilters(){
     const empList = [...new Set(fullData.map(r=>r['फाटवाला कर्मचारी']).filter(Boolean))];
     document.getElementById("employeeFilter").innerHTML =
@@ -221,7 +189,7 @@ function applyFilters(){
     });
 }
 
-/* status */
+/* Status */
 function getStatus(r){
     const s = (r['कामको अवस्था']||'').toLowerCase();
     if(s.includes('pend') || s.includes('पेन्ड')) return 'pending';
@@ -229,16 +197,11 @@ function getStatus(r){
     return '';
 }
 
-/* table */
+/* Table */
 function buildTable(data){
     let html = `<table class="table table-hover">
     <thead><tr>
-    <th>दर्ता नं.</th>
-    <th>दर्ता मिति</th>
-    <th>विषय</th>
-    <th>नाम</th>
-    <th>कर्मचारी</th>
-    <th>स्थिति</th>
+    <th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>स्थिति</th>
     </tr></thead><tbody>`;
 
     data.forEach(r=>{
@@ -249,7 +212,6 @@ function buildTable(data){
 
         html += `<tr>
         <td>${r['निवेदन दर्ता नं.']||''}</td>
-        <td>${r['दर्ता मिति']||''}</td>
         <td>${r['विषय']||''}</td>
         <td>${r['निवेदकको नाम थर']||''}</td>
         <td>${r['फाटवाला कर्मचारी']||''}</td>
@@ -260,11 +222,24 @@ function buildTable(data){
     return html + "</tbody></table>";
 }
 
-/* chart */
-let employeeChart;
+/* Charts */
+let statusChart, employeeChart;
 
-function renderChart(data){
+function renderCharts(pending, completed, data){
+
+    if(statusChart) statusChart.destroy();
     if(employeeChart) employeeChart.destroy();
+
+    statusChart = new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Pending','Completed'],
+            datasets: [{
+                data: [pending.length, completed.length],
+                backgroundColor:['#f59e0b','#16a34a']
+            }]
+        }
+    });
 
     const empCount = {};
     data.forEach(r=>{
@@ -273,33 +248,28 @@ function renderChart(data){
     });
 
     employeeChart = new Chart(document.getElementById('employeeChart'), {
-        type:'bar',
-        data:{
-            labels:Object.keys(empCount),
-            datasets:[{
+        type: 'bar',
+        data: {
+            labels: Object.keys(empCount),
+            datasets: [{
                 label:'Files',
-                data:Object.values(empCount),
+                data: Object.values(empCount),
                 backgroundColor:'#2563eb'
             }]
         }
     });
 }
 
-/* render */
+/* Render */
 function render(){
     const data = applyFilters();
 
     const pending = data.filter(r=>getStatus(r)==='pending');
     const completed = data.filter(r=>getStatus(r)==='complete');
 
-    const todayBS = NepaliDate.fromAD(new Date()).format('YYYY/MM/DD');
-    const todayData = data.filter(r => (r['दर्ता मिति']||'') === todayBS);
-
-    document.getElementById("todayCount").textContent = todayData.length;
     document.getElementById("pendingCount").textContent = pending.length;
     document.getElementById("completedCount").textContent = completed.length;
 
-    document.getElementById("todayTable").innerHTML = buildTable(todayData);
     document.getElementById("pendingTable").innerHTML = buildTable(pending);
     document.getElementById("completedTable").innerHTML = buildTable(completed);
 
@@ -309,10 +279,10 @@ function render(){
     <div class="col-md-4"><div class="counter-card bg-total">Total<div class="big-number">${data.length}</div></div></div>
     `;
 
-    renderChart(data);
+    renderCharts(pending, completed, data);
 }
 
-/* export */
+/* Export */
 function exportExcel(){
     const headers = Object.keys(fullData[0]);
     let csv = headers.join(",")+"\n";
@@ -328,11 +298,11 @@ function exportExcel(){
     a.click();
 }
 
-/* events */
+/* Events */
 document.getElementById("search").addEventListener("input",render);
 document.getElementById("employeeFilter").addEventListener("change",render);
 
-/* init */
+/* Init */
 load();
 setInterval(load,120000);
 
