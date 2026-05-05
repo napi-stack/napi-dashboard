@@ -17,14 +17,20 @@ body {
     font-family:'Segoe UI';
 }
 
+/* CENTERED HEADER */
 .header {
     height:70px;
     background: rgba(255,255,255,0.15);
     backdrop-filter: blur(10px);
     color:white;
-    padding:10px 20px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    flex-direction:column;
 }
 
+/* DASHBOARD */
 .dashboard {
     padding:10px;
     height: calc(100vh - 70px);
@@ -92,11 +98,9 @@ body {
 
 <body>
 
-<div class="header d-flex justify-content-between align-items-center">
-    <div>
-        <h5 class="mb-0">नापी कार्यालय डिल्लीबजार</h5>
-        <small>Smart File Dashboard</small>
-    </div>
+<div class="header">
+    <h5 class="mb-0">नापी कार्यालय डिल्लीबजार</h5>
+    <small>Smart File Dashboard</small>
     <div id="liveClock"></div>
 </div>
 
@@ -194,7 +198,7 @@ html+=`<tr>
 return html+"</tbody></table>";
 }
 
-/* CHART - FALLING EFFECT */
+/* CHART - TRUE FALL EFFECT */
 function renderChart(data){
 if(chart) chart.destroy();
 
@@ -208,47 +212,59 @@ if(st==='complete') emp[e].c++;
 });
 
 const labels=Object.keys(emp);
+const maxY = Math.max(...labels.map(e=>emp[e].p + emp[e].c)) + 2;
 
 chart=new Chart(employeeChart,{
 type:'bar',
 data:{
 labels,
 datasets:[
-{label:'Pending',data:labels.map(e=>emp[e].p),backgroundColor:'#f59e0b'},
-{label:'Completed',data:labels.map(e=>emp[e].c),backgroundColor:'#16a34a'}
+{
+label:'Pending',
+data:labels.map(e=>emp[e].p),
+backgroundColor:'#f59e0b',
+stack:'total'
+},
+{
+label:'Completed',
+data:labels.map(e=>emp[e].c),
+backgroundColor:'#16a34a',
+stack:'total'
+}
 ]
 },
 options:{
 responsive:true,
 maintainAspectRatio:false,
 animation:{
-duration:1500,
-easing:'easeOutBounce',
-delay:(ctx)=>ctx.dataIndex*150
+duration:1400,
+easing:'easeOutQuart'
 },
-scales:{y:{beginAtZero:true}}
+animations:{
+y:{
+from: maxY,   // 👈 THIS CREATES FALL EFFECT
+delay:(ctx)=>ctx.dataIndex*120
+}
+},
+scales:{
+x:{stacked:true},
+y:{stacked:true,beginAtZero:true}
+}
 }
 });
 }
 
-/* COUNTER (SMOOTH + OVERSHOOT) */
+/* COUNTER */
 function animateValue(el,end){
 let start=0;
-let duration=1000;
+let duration=900;
 let startTime=null;
-
-function easeOutExpo(x){
-return x===1?1:1-Math.pow(2,-10*x);
-}
 
 function step(ts){
 if(!startTime) startTime=ts;
 const progress=Math.min((ts-startTime)/duration,1);
-const eased=easeOutExpo(progress);
-const value=Math.floor(eased*end*1.05); // overshoot
-
-el.textContent = value > end ? end : value;
-
+const value=Math.floor(progress*end);
+el.textContent=value;
 if(progress<1) requestAnimationFrame(step);
 }
 requestAnimationFrame(step);
