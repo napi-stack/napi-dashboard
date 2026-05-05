@@ -18,9 +18,7 @@ body {
     font-family:'Segoe UI';
 }
 
-body.tv-mode {
-    overflow:hidden;
-}
+body.tv-mode { overflow:hidden; }
 
 .header {
     height:70px;
@@ -38,7 +36,8 @@ body.tv-mode .dashboard {
 
 .row.h-100 { height:100%; }
 
-.col-md-8, .col-md-4 {
+/* ✅ Equal split */
+.col-md-6 {
     display:flex;
     flex-direction:column;
 }
@@ -53,9 +52,15 @@ body.tv-mode .dashboard {
     flex-direction:column;
 }
 
-/* FIX: prevent infinite chart stretch */
-body:not(.tv-mode) #chartSection {
-    height:400px;
+/* ✅ FIX chart stretch permanently */
+#chartSection {
+    display:flex;
+    flex-direction:column;
+    height:350px; /* fixed height */
+}
+
+#employeeChart {
+    flex:1;
 }
 
 .counter-card {
@@ -64,7 +69,7 @@ body:not(.tv-mode) #chartSection {
     border-radius:10px;
     color:white;
 }
-.big-number { font-size:1.8rem; font-weight:800; }
+.big-number { font-size:2rem; font-weight:800; }
 
 .bg-pending { background:#f59e0b; }
 .bg-complete { background:#16a34a; }
@@ -99,15 +104,6 @@ body:not(.tv-mode) .table-container {
 .badge-pending { background:#f59e0b; }
 .badge-complete { background:#16a34a; }
 
-#chartSection {
-    display:flex;
-    flex-direction:column;
-}
-
-#employeeChart {
-    flex:1;
-}
-
 </style>
 </head>
 
@@ -129,7 +125,7 @@ body:not(.tv-mode) .table-container {
 <div class="row h-100">
 
 <!-- LEFT -->
-<div class="col-md-8">
+<div class="col-md-6">
 <div class="panel">
 
 <div id="counters" class="row g-2 mb-2"></div>
@@ -143,7 +139,7 @@ body:not(.tv-mode) .table-container {
 </div>
 
 <!-- RIGHT -->
-<div class="col-md-4">
+<div class="col-md-6">
 <div class="panel">
 
 <div id="chartSection">
@@ -246,30 +242,29 @@ type:'bar',
 data:{
 labels:labels,
 datasets:[
-{
-label:'Pending',
-data:labels.map(e=>employees[e].pending),
-backgroundColor:'#f59e0b',
-stack:'stack1'
-},
-{
-label:'Completed',
-data:labels.map(e=>employees[e].complete),
-backgroundColor:'#16a34a',
-stack:'stack1'
-}
+{label:'Pending',data:labels.map(e=>employees[e].pending),backgroundColor:'#f59e0b',stack:'s'},
+{label:'Completed',data:labels.map(e=>employees[e].complete),backgroundColor:'#16a34a',stack:'s'}
 ]
 },
 options:{
 responsive:true,
 maintainAspectRatio:false,
 plugins:{legend:{position:'top'}},
-scales:{
-x:{stacked:true},
-y:{stacked:true,beginAtZero:true}
-}
+scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}
 }
 });
+}
+
+/* COUNTER ANIMATION */
+function animateValue(el, start, end, duration){
+let startTime=null;
+function step(timestamp){
+if(!startTime) startTime=timestamp;
+const progress=Math.min((timestamp-startTime)/duration,1);
+el.textContent=Math.floor(progress*(end-start)+start);
+if(progress<1) requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
 }
 
 /* RENDER */
@@ -277,17 +272,21 @@ function render(){
 const p=fullData.filter(r=>getStatus(r)==='pending');
 const c=fullData.filter(r=>getStatus(r)==='complete');
 
-pendingCount.textContent=p.length;
-completedCount.textContent=c.length;
-
 pendingTable.innerHTML=buildTable(p);
 completedTable.innerHTML=buildTable(c);
 
 counters.innerHTML=`
-<div class="col-4"><div class="counter-card bg-pending">Pending<div class="big-number">${p.length}</div></div></div>
-<div class="col-4"><div class="counter-card bg-complete">Done<div class="big-number">${c.length}</div></div></div>
-<div class="col-4"><div class="counter-card bg-total">Total<div class="big-number">${fullData.length}</div></div></div>
+<div class="col-4"><div class="counter-card bg-pending">Pending<div id="pVal" class="big-number">0</div></div></div>
+<div class="col-4"><div class="counter-card bg-complete">Done<div id="cVal" class="big-number">0</div></div></div>
+<div class="col-4"><div class="counter-card bg-total">Total<div id="tVal" class="big-number">0</div></div></div>
 `;
+
+animateValue(document.getElementById("pVal"),0,p.length,800);
+animateValue(document.getElementById("cVal"),0,c.length,800);
+animateValue(document.getElementById("tVal"),0,fullData.length,800);
+
+pendingCount.textContent=p.length;
+completedCount.textContent=c.length;
 
 renderChart(fullData);
 }
@@ -319,18 +318,14 @@ showSlide(slideIndex);
 function toggleSlideshow(){
 if(running){
 clearInterval(slideTimer);
-
 completedSection.style.display="block";
 chartSection.style.display="block";
-
 enableScrollMode();
 running=false;
-
 }else{
 slideIndex=0;
 showSlide(slideIndex);
 startSlideshow();
-
 enableTVMode();
 running=true;
 }
