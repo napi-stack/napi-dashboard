@@ -17,7 +17,6 @@ body {
     font-family:'Segoe UI';
 }
 
-/* Header */
 .header {
     height:70px;
     background: rgba(255,255,255,0.15);
@@ -26,23 +25,18 @@ body {
     padding:10px 20px;
 }
 
-/* Layout */
 .dashboard {
     padding:10px;
     height: calc(100vh - 70px);
 }
-
-.row.h-100 { height:100%; }
 
 .col-md-6 {
     display:flex;
     flex-direction:column;
 }
 
-/* Panels */
 .panel {
     flex:1;
-    min-height:0;
     background:white;
     border-radius:15px;
     padding:12px;
@@ -50,12 +44,16 @@ body {
     flex-direction:column;
 }
 
-/* Counters */
+/* COUNTERS */
 .counter-card {
     text-align:center;
     padding:10px;
     border-radius:10px;
     color:white;
+    transition: transform 0.3s;
+}
+.counter-card.animate {
+    transform: scale(1.05);
 }
 .big-number { font-size:2rem; font-weight:800; }
 
@@ -63,41 +61,30 @@ body {
 .bg-complete { background:#16a34a; }
 .bg-total { background:#2563eb; }
 
-/* Tables */
+/* TABLE */
 .table-container {
     flex:1;
     overflow-y:auto;
-    min-height:0;
 }
 
 .table {
     background:#1e293b;
     color:#e2e8f0;
 }
-
 .table thead {
     position:sticky;
     top:0;
     background:#0f172a;
-    color:white;
 }
-
 .table tbody tr:nth-child(odd){ background:#334155; }
 .table tbody tr:nth-child(even){ background:#475569; }
-.table tbody tr:hover { background:#0ea5e9 !important; }
 
 .badge-pending { background:#f59e0b; }
 .badge-complete { background:#16a34a; }
 
-/* Chart */
+/* CHART */
 #chartSection {
     height:300px;
-    display:flex;
-    flex-direction:column;
-}
-
-#employeeChart {
-    flex:1;
 }
 
 </style>
@@ -154,22 +141,21 @@ const SHEET_ID="1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
 let fullData=[], chart;
 
 /* CLOCK */
-function updateClock(){
-    const now=new Date();
-    const bs=NepaliDate.fromAD(now);
-    liveClock.innerHTML=`${bs.format('YYYY/MM/DD')}<br>${now.toLocaleTimeString()}`;
-}
-setInterval(updateClock,1000);
+setInterval(()=>{
+const now=new Date();
+const bs=NepaliDate.fromAD(now);
+liveClock.innerHTML=`${bs.format('YYYY/MM/DD')}<br>${now.toLocaleTimeString()}`;
+},1000);
 
 /* CSV */
 function parseCSV(t){
-    const r=t.split("\n").map(x=>x.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
-    const h=r[0];
-    return r.slice(1).map(row=>{
-        let o={};
-        h.forEach((k,i)=>o[k.trim()]=(row[i]||"").replace(/"/g,''));
-        return o;
-    });
+const r=t.split("\n").map(x=>x.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+const h=r[0];
+return r.slice(1).map(row=>{
+let o={};
+h.forEach((k,i)=>o[k.trim()]=(row[i]||"").replace(/"/g,''));
+return o;
+});
 }
 
 /* LOAD */
@@ -177,16 +163,16 @@ function load(){
 fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
 .then(r=>r.text())
 .then(csv=>{
-    fullData=parseCSV(csv);
-    render();
+fullData=parseCSV(csv);
+render();
 });
 }
 
 /* STATUS */
 function getStatus(r){
-    const s=(r['कामको अवस्था']||'').toLowerCase();
-    if(s.includes('pend')) return 'pending';
-    if(s.includes('comp')) return 'complete';
+const s=(r['कामको अवस्था']||'').toLowerCase();
+if(s.includes('pend')) return 'pending';
+if(s.includes('comp')) return 'complete';
 }
 
 /* TABLE */
@@ -210,49 +196,60 @@ html+=`<tr>
 return html+"</tbody></table>";
 }
 
-/* CHART (STACKED) */
+/* CHART */
 function renderChart(data){
 if(chart) chart.destroy();
 
-const employees={};
+const emp={};
 data.forEach(r=>{
-    const e=r['फाटवाला कर्मचारी']||'Unknown';
-    if(!employees[e]) employees[e]={pending:0,complete:0};
-    const st=getStatus(r);
-    if(st==='pending') employees[e].pending++;
-    if(st==='complete') employees[e].complete++;
+const e=r['फाटवाला कर्मचारी']||'Unknown';
+if(!emp[e]) emp[e]={p:0,c:0};
+const st=getStatus(r);
+if(st==='pending') emp[e].p++;
+if(st==='complete') emp[e].c++;
 });
 
-const labels=Object.keys(employees);
+const labels=Object.keys(emp);
 
 chart=new Chart(employeeChart,{
 type:'bar',
 data:{
-labels:labels,
+labels,
 datasets:[
-{label:'Pending',data:labels.map(e=>employees[e].pending),backgroundColor:'#f59e0b',stack:'s'},
-{label:'Completed',data:labels.map(e=>employees[e].complete),backgroundColor:'#16a34a',stack:'s'}
+{label:'Pending',data:labels.map(e=>emp[e].p),backgroundColor:'#f59e0b',stack:'s'},
+{label:'Completed',data:labels.map(e=>emp[e].c),backgroundColor:'#16a34a',stack:'s'}
 ]
 },
 options:{
 responsive:true,
 maintainAspectRatio:false,
-plugins:{legend:{position:'top'}},
+animation:{duration:1200},
 scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}
 }
 });
 }
 
 /* COUNTER ANIMATION */
-function animateValue(el, start, end, duration){
+function animateValue(el,end){
+let start=0;
+let duration=800;
 let startTime=null;
-function step(timestamp){
-if(!startTime) startTime=timestamp;
-const progress=Math.min((timestamp-startTime)/duration,1);
-el.textContent=Math.floor(progress*(end-start)+start);
+
+function step(ts){
+if(!startTime) startTime=ts;
+const progress=Math.min((ts-startTime)/duration,1);
+el.textContent=Math.floor(progress*end);
 if(progress<1) requestAnimationFrame(step);
 }
 requestAnimationFrame(step);
+}
+
+/* PLAYFUL LOOP */
+function pulseCounters(){
+document.querySelectorAll('.counter-card').forEach(c=>{
+c.classList.add("animate");
+setTimeout(()=>c.classList.remove("animate"),400);
+});
 }
 
 /* RENDER */
@@ -272,12 +269,18 @@ counters.innerHTML=`
 <div class="col-4"><div class="counter-card bg-total">Total<div id="tVal" class="big-number">0</div></div></div>
 `;
 
-animateValue(document.getElementById("pVal"),0,p.length,800);
-animateValue(document.getElementById("cVal"),0,c.length,800);
-animateValue(document.getElementById("tVal"),0,fullData.length,800);
+animateValue(pVal,p.length);
+animateValue(cVal,c.length);
+animateValue(tVal,fullData.length);
 
 renderChart(fullData);
 }
+
+/* AUTO ANIMATION LOOP */
+setInterval(()=>{
+pulseCounters();
+renderChart(fullData); // reanimate chart
+},6000);
 
 /* INIT */
 load();
