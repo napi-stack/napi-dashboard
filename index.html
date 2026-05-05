@@ -14,9 +14,13 @@
 body {
     margin:0;
     height:100vh;
-    overflow:hidden;
     background: linear-gradient(135deg,#1e3a8a,#0ea5e9);
     font-family:'Segoe UI';
+}
+
+/* TV MODE */
+body.tv-mode {
+    overflow:hidden;
 }
 
 .header {
@@ -28,8 +32,12 @@ body {
 }
 
 .dashboard {
-    height: calc(100vh - 70px);
     padding:10px;
+}
+
+/* TV mode height lock */
+body.tv-mode .dashboard {
+    height: calc(100vh - 70px);
 }
 
 .row.h-100 { height:100%; }
@@ -49,6 +57,11 @@ body {
     flex-direction:column;
 }
 
+/* Expand panels in scroll mode */
+body:not(.tv-mode) .panel {
+    height:auto;
+}
+
 .counter-card {
     text-align:center;
     padding:10px;
@@ -65,6 +78,11 @@ body {
     flex:1;
     overflow-y:auto;
     min-height:0;
+}
+
+/* Allow full scroll in manual mode */
+body:not(.tv-mode) .table-container {
+    overflow:visible;
 }
 
 .table {
@@ -116,8 +134,8 @@ body {
 <div class="container-fluid dashboard">
 <div class="row h-100">
 
-<!-- LEFT SIDE (ALWAYS VISIBLE) -->
-<div class="col-md-8 h-100">
+<!-- LEFT -->
+<div class="col-md-8">
 <div class="panel">
 
 <div id="counters" class="row g-2 mb-2"></div>
@@ -130,8 +148,8 @@ body {
 </div>
 </div>
 
-<!-- RIGHT SIDE (SLIDES) -->
-<div class="col-md-4 h-100">
+<!-- RIGHT -->
+<div class="col-md-4">
 <div class="panel">
 
 <div id="chartSection">
@@ -165,7 +183,7 @@ function updateClock(){
 }
 setInterval(updateClock,1000);
 
-/* CSV PARSER */
+/* CSV */
 function parseCSV(t){
     const r=t.split("\n").map(x=>x.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
     const h=r[0];
@@ -176,7 +194,7 @@ function parseCSV(t){
     });
 }
 
-/* LOAD DATA */
+/* LOAD */
 function load(){
 fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
 .then(r=>r.text())
@@ -214,7 +232,7 @@ html+=`<tr>
 return html+"</tbody></table>";
 }
 
-/* CHART (Pending vs Completed) */
+/* CHART */
 function renderChart(data){
 if(chart) chart.destroy();
 
@@ -267,15 +285,21 @@ counters.innerHTML=`
 renderChart(fullData);
 }
 
-/* SLIDESHOW (RIGHT SIDE ONLY) */
+/* MODES */
+function enableTVMode(){
+document.body.classList.add("tv-mode");
+}
+
+function enableScrollMode(){
+document.body.classList.remove("tv-mode");
+}
+
+/* SLIDESHOW */
 let slideIndex=0, slideTimer, running=true;
 
 function showSlide(i){
-
-// LEFT always visible
 pendingSection.style.display="block";
 
-// RIGHT slides
 completedSection.style.display="none";
 chartSection.style.display="none";
 
@@ -294,15 +318,20 @@ function toggleSlideshow(){
 if(running){
 clearInterval(slideTimer);
 
-// show all
 completedSection.style.display="block";
 chartSection.style.display="block";
 
+enableScrollMode();
+
 running=false;
+
 }else{
 slideIndex=0;
 showSlide(slideIndex);
 startSlideshow();
+
+enableTVMode();
+
 running=true;
 }
 }
@@ -320,13 +349,11 @@ document.exitFullscreen();
 load();
 setInterval(load,120000);
 
+enableTVMode();
 showSlide(0);
 startSlideshow();
 
-/* TRY AUTO FULLSCREEN */
-setTimeout(()=>{
-toggleFullscreen();
-},1000);
+setTimeout(()=>{ toggleFullscreen(); },1000);
 
 </script>
 
