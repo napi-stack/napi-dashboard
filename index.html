@@ -19,7 +19,6 @@ body {
     font-family:'Segoe UI';
 }
 
-/* HEADER */
 .header {
     height:70px;
     background: rgba(255,255,255,0.15);
@@ -28,19 +27,16 @@ body {
     padding:10px 20px;
 }
 
-/* CLOCK */
 #liveClock {
     font-size:0.9rem;
     text-align:right;
 }
 
-/* MAIN */
 .dashboard {
     height: calc(100vh - 70px);
     padding:15px;
 }
 
-/* PANEL */
 .panel {
     background:white;
     border-radius:15px;
@@ -50,7 +46,6 @@ body {
     flex-direction:column;
 }
 
-/* COUNTERS */
 .counter-card {
     text-align:center;
     padding:10px;
@@ -63,7 +58,6 @@ body {
 .bg-complete { background:#16a34a; }
 .bg-total { background:#2563eb; }
 
-/* TABLE */
 .table-container {
     flex:1;
     overflow:auto;
@@ -88,7 +82,6 @@ body {
     background:#0ea5e9 !important;
 }
 
-/* BADGES */
 .badge-pending { background:#f59e0b; }
 .badge-complete { background:#16a34a; }
 
@@ -97,20 +90,20 @@ body {
 
 <body>
 
-<!-- HEADER -->
 <div class="header d-flex justify-content-between align-items-center">
     <div>
         <h5 class="mb-0">नापी कार्यालय डिल्लीबजार</h5>
         <small>Smart File Dashboard</small>
     </div>
-    <div id="liveClock"></div>
+    <div class="d-flex align-items-center gap-2">
+        <div id="liveClock"></div>
+        <button class="btn btn-light btn-sm" onclick="toggleSlideshow()">▶️</button>
+    </div>
 </div>
 
-<!-- DASHBOARD -->
 <div class="container-fluid dashboard">
 <div class="row h-100">
 
-<!-- LEFT -->
 <div class="col-md-8 h-100">
 <div class="panel">
 
@@ -129,23 +122,28 @@ body {
 
 <div id="counters" class="row g-2 mb-2"></div>
 
+<div id="pendingSection">
 <h6 class="text-warning">📌 Pending (<span id="pendingCount"></span>)</h6>
 <div class="table-container" id="pendingTable"></div>
+</div>
 
 </div>
 </div>
 
-<!-- RIGHT -->
 <div class="col-md-4 h-100">
 <div class="panel">
 
+<div id="chartSection">
 <h6>📊 Files by Employee</h6>
 <canvas id="employeeChart"></canvas>
+</div>
 
 <hr>
 
+<div id="completedSection">
 <h6 class="text-success">Completed (<span id="completedCount"></span>)</h6>
 <div class="table-container" id="completedTable"></div>
+</div>
 
 </div>
 </div>
@@ -155,68 +153,61 @@ body {
 
 <script>
 
-const SHEET_ID = "1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
-let fullData=[];
-let chart;
+const SHEET_ID="1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
+let fullData=[], chart;
 
 /* CLOCK */
 function updateClock(){
-    const now = new Date();
-    const bs = NepaliDate.fromAD(now);
-    document.getElementById("liveClock").innerHTML =
-        `${bs.format('YYYY/MM/DD')}<br>${now.toLocaleTimeString()}`;
+    const now=new Date();
+    const bs=NepaliDate.fromAD(now);
+    liveClock.innerHTML=`${bs.format('YYYY/MM/DD')}<br>${now.toLocaleTimeString()}`;
 }
 setInterval(updateClock,1000);
 
-/* DATE FORMAT */
-function formatDate(value){
-    if(!value) return "";
-    if(!isNaN(value)){
-        const d = new Date((value - 25569) * 86400 * 1000);
-        return d.toLocaleDateString();
+/* DATE */
+function formatDate(v){
+    if(!v) return "";
+    if(!isNaN(v)){
+        return new Date((v-25569)*86400*1000).toLocaleDateString();
     }
-    return value;
+    return v;
 }
 
 /* CSV */
-function parseCSV(text){
-    const rows=text.split("\n").map(r=>r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
-    const headers=rows[0];
-
-    return rows.slice(1).map(r=>{
-        let obj={};
-        headers.forEach((h,i)=> obj[h.trim()] = (r[i]||"").replace(/"/g,''));
-        return obj;
+function parseCSV(t){
+    const r=t.split("\n").map(x=>x.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+    const h=r[0];
+    return r.slice(1).map(row=>{
+        let o={};
+        h.forEach((k,i)=>o[k.trim()]=(row[i]||"").replace(/"/g,''));
+        return o;
     });
 }
 
 /* LOAD */
 function load(){
-    fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
-    .then(r=>r.text())
-    .then(csv=>{
-        fullData=parseCSV(csv);
-        setupFilters();
-        render();
-    });
+fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
+.then(r=>r.text())
+.then(csv=>{
+    fullData=parseCSV(csv);
+    setupFilters();
+    render();
+});
 }
 
 /* FILTER */
 function setupFilters(){
-    const emp=[...new Set(fullData.map(r=>r['फाटवाला कर्मचारी']).filter(Boolean))];
-    employeeFilter.innerHTML =
-        `<option value="">All Employees</option>` +
-        emp.map(e=>`<option>${e}</option>`).join("");
+    const e=[...new Set(fullData.map(r=>r['फाटवाला कर्मचारी']).filter(Boolean))];
+    employeeFilter.innerHTML=`<option value="">All</option>`+e.map(x=>`<option>${x}</option>`).join("");
 }
 
 function applyFilters(){
     const k=search.value.toLowerCase();
     const e=employeeFilter.value;
-
     return fullData.filter(r=>{
-        const t = Object.values(r).some(v=>String(v).toLowerCase().includes(k));
-        const m = !e || r['फाटवाला कर्मचारी']===e;
-        return t && m;
+        const t=Object.values(r).some(v=>String(v).toLowerCase().includes(k));
+        const m=!e||r['फाटवाला कर्मचारी']===e;
+        return t&&m;
     });
 }
 
@@ -228,98 +219,111 @@ function getStatus(r){
 }
 
 /* TABLE */
-function buildTable(data){
-    let html=`<table class="table">
-    <thead><tr>
-    <th>दर्ता नं.</th>
-    <th>विषय</th>
-    <th>नाम</th>
-    <th>कर्मचारी</th>
-    <th>दर्ता मिति</th>
-    <th>स्थिति</th>
-    </tr></thead><tbody>`;
-
-    data.forEach(r=>{
-        const st=getStatus(r);
-        const badge=st==='pending'
-            ? '<span class="badge badge-pending">Pending</span>'
-            : '<span class="badge badge-complete">Done</span>';
-
-        html+=`<tr>
-        <td>${r['निवेदन दर्ता नं.']||''}</td>
-        <td>${r['विषय']||''}</td>
-        <td>${r['निवेदकको नाम थर']||''}</td>
-        <td>${r['फाटवाला कर्मचारी']||''}</td>
-        <td>${formatDate(r['दर्ता मिति'])}</td>
-        <td>${badge}</td>
-        </tr>`;
-    });
-
-    return html+"</tbody></table>";
+function buildTable(d){
+let html=`<table class="table"><thead><tr>
+<th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>दर्ता मिति</th><th>स्थिति</th>
+</tr></thead><tbody>`;
+d.forEach(r=>{
+const st=getStatus(r);
+const badge=st==='pending'
+?'<span class="badge badge-pending">Pending</span>'
+:'<span class="badge badge-complete">Done</span>';
+html+=`<tr>
+<td>${r['निवेदन दर्ता नं.']||''}</td>
+<td>${r['विषय']||''}</td>
+<td>${r['निवेदकको नाम थर']||''}</td>
+<td>${r['फाटवाला कर्मचारी']||''}</td>
+<td>${formatDate(r['दर्ता मिति'])}</td>
+<td>${badge}</td>
+</tr>`;
+});
+return html+"</tbody></table>";
 }
 
 /* CHART */
 function renderChart(data){
-    if(chart) chart.destroy();
-
-    const count={};
-    data.forEach(r=>{
-        const e=r['फाटवाला कर्मचारी']||'Unknown';
-        count[e]=(count[e]||0)+1;
-    });
-
-    chart=new Chart(employeeChart,{
-        type:'bar',
-        data:{
-            labels:Object.keys(count),
-            datasets:[{
-                data:Object.values(count),
-                backgroundColor:'#2563eb'
-            }]
-        }
-    });
+if(chart) chart.destroy();
+const c={};
+data.forEach(r=>{
+const e=r['फाटवाला कर्मचारी']||'Unknown';
+c[e]=(c[e]||0)+1;
+});
+chart=new Chart(employeeChart,{
+type:'bar',
+data:{labels:Object.keys(c),
+datasets:[{data:Object.values(c),backgroundColor:'#2563eb'}]}
+});
 }
 
 /* RENDER */
 function render(){
-    const data=applyFilters();
-    const pending=data.filter(r=>getStatus(r)==='pending');
-    const completed=data.filter(r=>getStatus(r)==='complete');
+const d=applyFilters();
+const p=d.filter(r=>getStatus(r)==='pending');
+const c=d.filter(r=>getStatus(r)==='complete');
 
-    pendingCount.textContent=pending.length;
-    completedCount.textContent=completed.length;
+pendingCount.textContent=p.length;
+completedCount.textContent=c.length;
 
-    pendingTable.innerHTML=buildTable(pending);
-    completedTable.innerHTML=buildTable(completed);
+pendingTable.innerHTML=buildTable(p);
+completedTable.innerHTML=buildTable(c);
 
-    counters.innerHTML=`
-    <div class="col-4"><div class="counter-card bg-pending">Pending<div class="big-number">${pending.length}</div></div></div>
-    <div class="col-4"><div class="counter-card bg-complete">Done<div class="big-number">${completed.length}</div></div></div>
-    <div class="col-4"><div class="counter-card bg-total">Total<div class="big-number">${data.length}</div></div></div>
-    `;
+counters.innerHTML=`
+<div class="col-4"><div class="counter-card bg-pending">Pending<div class="big-number">${p.length}</div></div></div>
+<div class="col-4"><div class="counter-card bg-complete">Done<div class="big-number">${c.length}</div></div></div>
+<div class="col-4"><div class="counter-card bg-total">Total<div class="big-number">${d.length}</div></div></div>
+`;
 
-    renderChart(data);
+renderChart(d);
 }
 
 /* EXPORT */
 function exportExcel(){
-    let csv="";
-    fullData.forEach(r=> csv+=Object.values(r).join(",")+"\n");
-
-    const blob=new Blob([csv]);
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download="files.csv";
-    a.click();
+let csv="";
+fullData.forEach(r=>csv+=Object.values(r).join(",")+"\n");
+const blob=new Blob([csv]);
+const a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="files.csv";
+a.click();
 }
 
-/* EVENTS */
-search.oninput=render;
-employeeFilter.onchange=render;
+/* SLIDESHOW */
+let slideIndex=0, slideTimer, running=true;
+
+function showSlide(i){
+pendingSection.style.display="none";
+completedSection.style.display="none";
+chartSection.style.display="none";
+
+if(i===0) pendingSection.style.display="block";
+if(i===1) completedSection.style.display="block";
+if(i===2) chartSection.style.display="block";
+}
+
+function startSlideshow(){
+slideTimer=setInterval(()=>{
+slideIndex=(slideIndex+1)%3;
+showSlide(slideIndex);
+},5000);
+}
+
+function toggleSlideshow(){
+if(running){
+clearInterval(slideTimer);
+pendingSection.style.display="block";
+completedSection.style.display="block";
+chartSection.style.display="block";
+running=false;
+}else{
+startSlideshow();
+running=true;
+}
+}
 
 /* INIT */
 load();
 setInterval(load,120000);
+startSlideshow();  // ✅ AUTO START
 
 </script>
 
