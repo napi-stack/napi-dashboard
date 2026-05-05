@@ -18,7 +18,6 @@ body {
     font-family:'Segoe UI';
 }
 
-/* TV MODE */
 body.tv-mode {
     overflow:hidden;
 }
@@ -31,11 +30,8 @@ body.tv-mode {
     padding:10px 20px;
 }
 
-.dashboard {
-    padding:10px;
-}
+.dashboard { padding:10px; }
 
-/* TV mode height lock */
 body.tv-mode .dashboard {
     height: calc(100vh - 70px);
 }
@@ -57,9 +53,9 @@ body.tv-mode .dashboard {
     flex-direction:column;
 }
 
-/* Expand panels in scroll mode */
-body:not(.tv-mode) .panel {
-    height:auto;
+/* FIX: prevent infinite chart stretch */
+body:not(.tv-mode) #chartSection {
+    height:400px;
 }
 
 .counter-card {
@@ -80,7 +76,6 @@ body:not(.tv-mode) .panel {
     min-height:0;
 }
 
-/* Allow full scroll in manual mode */
 body:not(.tv-mode) .table-container {
     overflow:visible;
 }
@@ -107,7 +102,6 @@ body:not(.tv-mode) .table-container {
 #chartSection {
     display:flex;
     flex-direction:column;
-    height:100%;
 }
 
 #employeeChart {
@@ -232,7 +226,7 @@ html+=`<tr>
 return html+"</tbody></table>";
 }
 
-/* CHART */
+/* CHART (STACKED) */
 function renderChart(data){
 if(chart) chart.destroy();
 
@@ -252,15 +246,28 @@ type:'bar',
 data:{
 labels:labels,
 datasets:[
-{label:'Pending',data:labels.map(e=>employees[e].pending),backgroundColor:'#f59e0b'},
-{label:'Completed',data:labels.map(e=>employees[e].complete),backgroundColor:'#16a34a'}
+{
+label:'Pending',
+data:labels.map(e=>employees[e].pending),
+backgroundColor:'#f59e0b',
+stack:'stack1'
+},
+{
+label:'Completed',
+data:labels.map(e=>employees[e].complete),
+backgroundColor:'#16a34a',
+stack:'stack1'
+}
 ]
 },
 options:{
 responsive:true,
 maintainAspectRatio:false,
 plugins:{legend:{position:'top'}},
-scales:{y:{beginAtZero:true}}
+scales:{
+x:{stacked:true},
+y:{stacked:true,beginAtZero:true}
+}
 }
 });
 }
@@ -286,13 +293,8 @@ renderChart(fullData);
 }
 
 /* MODES */
-function enableTVMode(){
-document.body.classList.add("tv-mode");
-}
-
-function enableScrollMode(){
-document.body.classList.remove("tv-mode");
-}
+function enableTVMode(){ document.body.classList.add("tv-mode"); }
+function enableScrollMode(){ document.body.classList.remove("tv-mode"); }
 
 /* SLIDESHOW */
 let slideIndex=0, slideTimer, running=true;
@@ -322,7 +324,6 @@ completedSection.style.display="block";
 chartSection.style.display="block";
 
 enableScrollMode();
-
 running=false;
 
 }else{
@@ -331,7 +332,6 @@ showSlide(slideIndex);
 startSlideshow();
 
 enableTVMode();
-
 running=true;
 }
 }
