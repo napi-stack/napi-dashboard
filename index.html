@@ -17,23 +17,46 @@ body {
     font-family:'Segoe UI';
 }
 
-/* HEADER CENTERED */
+/* HEADER */
 .header {
-    height:80px;
+    height:110px;
     background: rgba(255,255,255,0.15);
     backdrop-filter: blur(10px);
     color:white;
     display:flex;
-    justify-content:center;
     align-items:center;
-    flex-direction:column;
-    text-align:center;
+    padding:10px 20px;
+}
+
+/* LOGO */
+.logo {
+    width:70px;
+    margin-right:15px;
+}
+
+/* HEADER TEXT */
+.header-text {
+    line-height:1.2;
+}
+
+.header-text .office {
+    font-size:22px;
+    font-weight:800;
+}
+
+.header-text small {
+    font-size:13px;
+}
+
+#liveClock {
+    margin-left:auto;
+    text-align:right;
 }
 
 /* DASHBOARD */
 .dashboard {
     padding:10px;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 110px);
 }
 
 .col-md-6 {
@@ -73,8 +96,6 @@ body {
     border-radius:8px;
     font-weight:600;
     margin-bottom:8px;
-    display:block;
-    animation: fadeSlide 0.6s ease;
 }
 
 .section-pending {
@@ -85,11 +106,6 @@ body {
 .section-completed {
     background: linear-gradient(90deg,#16a34a,#4ade80);
     color:white;
-}
-
-@keyframes fadeSlide {
-    from {opacity:0; transform:translateY(-5px);}
-    to {opacity:1; transform:translateY(0);}
 }
 
 /* TABLE */
@@ -124,8 +140,16 @@ body {
 <body>
 
 <div class="header">
-    <h5 class="mb-0">नापी कार्यालय डिल्लीबजार</h5>
-    <small>Smart File Dashboard</small>
+    <img src="https://giwmscdnone.gov.np/static/assets/image/Emblem_of_Nepal.png" class="logo">
+
+    <div class="header-text">
+        नेपाल सरकार<br>
+        भूमि व्यवस्था, सहकारी तथा गरिबी निवारण मन्त्रालय<br>
+        नापी विभाग<br>
+        <div class="office">नापी कार्यालय डिल्लीबजार</div>
+        डिल्लीबजार, काठमाडौं
+    </div>
+
     <div id="liveClock"></div>
 </div>
 
@@ -213,21 +237,30 @@ if(s.includes('comp')) return 'complete';
 /* TABLE */
 function buildTable(d){
 let html=`<table class="table"><thead><tr>
-<th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>स्थिति</th>
+<th>दर्ता नं.</th>
+<th>दर्ता मिति</th>
+<th>विषय</th>
+<th>नाम</th>
+<th>कर्मचारी</th>
+<th>स्थिति</th>
 </tr></thead><tbody>`;
+
 d.forEach(r=>{
 const st=getStatus(r);
 const badge=st==='pending'
 ?'<span class="badge badge-pending">Pending</span>'
 :'<span class="badge badge-complete">Done</span>';
+
 html+=`<tr>
 <td>${r['निवेदन दर्ता नं.']||''}</td>
+<td>${r['दर्ता मिति']||''}</td>
 <td>${r['विषय']||''}</td>
 <td>${r['निवेदकको नाम थर']||''}</td>
 <td>${r['फाटवाला कर्मचारी']||''}</td>
 <td>${badge}</td>
 </tr>`;
 });
+
 return html+"</tbody></table>";
 }
 
@@ -245,7 +278,6 @@ if(st==='complete') emp[e].c++;
 });
 
 const labels=Object.keys(emp);
-const maxY = Math.max(...labels.map(e=>emp[e].p + emp[e].c)) + 2;
 
 chart=new Chart(employeeChart,{
 type:'bar',
@@ -269,13 +301,6 @@ stack:'total'
 options:{
 responsive:true,
 maintainAspectRatio:false,
-animation:{duration:1400,easing:'easeOutQuart'},
-animations:{
-y:{
-from:maxY,
-delay:(ctx)=>ctx.dataIndex*120
-}
-},
 scales:{
 x:{stacked:true},
 y:{stacked:true,beginAtZero:true}
@@ -296,14 +321,6 @@ el.textContent=Math.floor(progress*end);
 if(progress<1) requestAnimationFrame(step);
 }
 requestAnimationFrame(step);
-}
-
-/* PULSE */
-function pulseCounters(){
-document.querySelectorAll('.counter-card').forEach(c=>{
-c.classList.add("animate");
-setTimeout(()=>c.classList.remove("animate"),400);
-});
 }
 
 /* RENDER */
@@ -329,12 +346,6 @@ animateValue(tVal,fullData.length);
 
 renderChart(fullData);
 }
-
-/* LOOP */
-setInterval(()=>{
-pulseCounters();
-renderChart(fullData);
-},6000);
 
 /* INIT */
 load();
