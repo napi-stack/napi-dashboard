@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Napi Smart Dashboard</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,111 +12,188 @@
 
 <style>
 
-body {
+body{
     margin:0;
-    background: linear-gradient(135deg,#1e3a8a,#0ea5e9);
-    font-family:'Segoe UI';
+    background:linear-gradient(135deg,#1e3a8a,#0ea5e9);
+    font-family:'Segoe UI',sans-serif;
+    overflow:hidden;
 }
 
-/* HEADER CENTERED */
-.header {
-    height:80px;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(10px);
+/* HEADER */
+.header{
+    height:110px;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(10px);
     color:white;
     display:flex;
-    justify-content:center;
     align-items:center;
-    flex-direction:column;
-    text-align:center;
+    padding:10px 20px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.15);
+}
+
+.logo{
+    width:70px;
+    margin-right:15px;
+}
+
+.header-text{
+    line-height:1.25;
+    font-size:15px;
+    font-weight:600;
+}
+
+.office{
+    font-size:24px;
+    font-weight:800;
+    color:#fff;
+}
+
+#liveClock{
+    margin-left:auto;
+    text-align:right;
+    font-size:15px;
+    font-weight:700;
 }
 
 /* DASHBOARD */
-.dashboard {
+.dashboard{
     padding:10px;
-    height: calc(100vh - 80px);
+    height:calc(100vh - 110px);
 }
 
-.col-md-6 {
+.col-md-6{
     display:flex;
     flex-direction:column;
 }
 
-.panel {
+.panel{
     flex:1;
-    background:white;
-    border-radius:15px;
+    background:rgba(255,255,255,0.97);
+    border-radius:18px;
     padding:12px;
     display:flex;
     flex-direction:column;
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
 }
 
 /* COUNTERS */
-.counter-card {
+.counter-card{
     text-align:center;
-    padding:10px;
-    border-radius:10px;
+    padding:12px;
+    border-radius:12px;
     color:white;
-    transition: transform 0.3s;
+    transition:0.3s;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
 }
-.counter-card.animate {
-    transform: scale(1.08);
-}
-.big-number { font-size:2rem; font-weight:800; }
 
-.bg-pending { background:#f59e0b; }
-.bg-complete { background:#16a34a; }
-.bg-total { background:#2563eb; }
+.counter-card:hover{
+    transform:translateY(-4px);
+}
+
+.big-number{
+    font-size:2rem;
+    font-weight:800;
+}
+
+.bg-pending{
+    background:linear-gradient(135deg,#f59e0b,#fbbf24);
+}
+
+.bg-complete{
+    background:linear-gradient(135deg,#16a34a,#4ade80);
+}
+
+.bg-total{
+    background:linear-gradient(135deg,#2563eb,#60a5fa);
+}
 
 /* SECTION TITLES */
-.section-title {
-    padding:8px 12px;
-    border-radius:8px;
-    font-weight:600;
+.section-title{
+    padding:10px 14px;
+    border-radius:10px;
+    font-weight:700;
     margin-bottom:8px;
-    display:block;
-    animation: fadeSlide 0.6s ease;
+    font-size:15px;
 }
 
-.section-pending {
-    background: linear-gradient(90deg,#f59e0b,#fbbf24);
+.section-pending{
+    background:linear-gradient(90deg,#f59e0b,#fbbf24);
     color:#1e293b;
 }
 
-.section-completed {
-    background: linear-gradient(90deg,#16a34a,#4ade80);
+.section-completed{
+    background:linear-gradient(90deg,#16a34a,#4ade80);
     color:white;
 }
 
-@keyframes fadeSlide {
-    from {opacity:0; transform:translateY(-5px);}
-    to {opacity:1; transform:translateY(0);}
-}
-
 /* TABLE */
-.table-container {
+.table-container{
     flex:1;
     overflow-y:auto;
+    border-radius:10px;
 }
 
-.table {
+.table{
+    margin-bottom:0;
     background:#1e293b;
     color:#e2e8f0;
+    font-size:14px;
 }
-.table thead {
+
+.table thead{
     position:sticky;
     top:0;
     background:#0f172a;
+    z-index:5;
 }
-.table tbody tr:nth-child(odd){ background:#334155; }
-.table tbody tr:nth-child(even){ background:#475569; }
 
-.badge-pending { background:#f59e0b; }
-.badge-complete { background:#16a34a; }
+.table th{
+    white-space:nowrap;
+    padding:12px 10px;
+}
+
+.table td{
+    padding:10px;
+    vertical-align:middle;
+}
+
+.table tbody tr:nth-child(odd){
+    background:#334155;
+}
+
+.table tbody tr:nth-child(even){
+    background:#475569;
+}
+
+.table tbody tr:hover{
+    background:#64748b;
+    transition:0.2s;
+}
+
+.badge-pending{
+    background:#f59e0b;
+}
+
+.badge-complete{
+    background:#16a34a;
+}
 
 /* CHART */
-#chartSection {
-    height:300px;
+#chartSection{
+    height:320px;
+}
+
+canvas{
+    max-height:260px;
+}
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#94a3b8;
+    border-radius:10px;
 }
 
 </style>
@@ -124,221 +202,402 @@ body {
 <body>
 
 <div class="header">
-    <h5 class="mb-0">नापी कार्यालय डिल्लीबजार</h5>
-    <small>Smart File Dashboard</small>
+
+    <img
+        src="https://giwmscdnone.gov.np/static/assets/image/Emblem_of_Nepal.png"
+        class="logo"
+    >
+
+    <div class="header-text">
+        नेपाल सरकार<br>
+        भूमि व्यवस्था, सहकारी तथा गरिबी निवारण मन्त्रालय<br>
+        नापी विभाग<br>
+
+        <div class="office">
+            नापी कार्यालय डिल्लीबजार
+        </div>
+
+        डिल्लीबजार, काठमाडौं
+    </div>
+
     <div id="liveClock"></div>
+
 </div>
 
 <div class="container-fluid dashboard">
+
 <div class="row h-100">
 
-<!-- LEFT -->
-<div class="col-md-6">
-<div class="panel">
+    <!-- LEFT -->
+    <div class="col-md-6">
 
-<div id="counters" class="row g-2 mb-2"></div>
+        <div class="panel">
 
-<h6 class="section-title section-pending">
-📌 Pending (<span id="pendingCount"></span>)
-</h6>
+            <div id="counters" class="row g-2 mb-3"></div>
 
-<div class="table-container" id="pendingTable"></div>
+            <h6 class="section-title section-pending">
+                📌 Pending Files
+                (<span id="pendingCount"></span>)
+            </h6>
+
+            <div class="table-container" id="pendingTable"></div>
+
+        </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col-md-6">
+
+        <div class="panel">
+
+            <div id="chartSection">
+
+                <h6 class="fw-bold mb-3">
+                    📊 Files by Employee
+                </h6>
+
+                <canvas id="employeeChart"></canvas>
+
+            </div>
+
+            <hr>
+
+            <h6 class="section-title section-completed">
+                ✅ Completed Files
+                (<span id="completedCount"></span>)
+            </h6>
+
+            <div class="table-container" id="completedTable"></div>
+
+        </div>
+
+    </div>
 
 </div>
-</div>
 
-<!-- RIGHT -->
-<div class="col-md-6">
-<div class="panel">
-
-<div id="chartSection">
-<h6>📊 Files by Employee</h6>
-<canvas id="employeeChart"></canvas>
-</div>
-
-<hr>
-
-<h6 class="section-title section-completed">
-Completed (<span id="completedCount"></span>)
-</h6>
-
-<div class="table-container" id="completedTable"></div>
-
-</div>
-</div>
-
-</div>
 </div>
 
 <script>
 
-const SHEET_ID="1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
-let fullData=[], chart;
+const SHEET_ID = "1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
 
-/* CLOCK */
-setInterval(()=>{
-const now=new Date();
-const bs=NepaliDate.fromAD(now);
-liveClock.innerHTML=`${bs.format('YYYY/MM/DD')}<br>${now.toLocaleTimeString()}`;
-},1000);
+let fullData = [];
+let chart;
 
-/* CSV */
-function parseCSV(t){
-const r=t.split("\n").map(x=>x.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
-const h=r[0];
-return r.slice(1).map(row=>{
-let o={};
-h.forEach((k,i)=>o[k.trim()]=(row[i]||"").replace(/"/g,''));
-return o;
-});
+/* LIVE CLOCK */
+setInterval(() => {
+
+    const now = new Date();
+
+    const bs = NepaliDate.fromAD(now);
+
+    liveClock.innerHTML = `
+        ${bs.format('YYYY/MM/DD')}<br>
+        ${now.toLocaleTimeString()}
+    `;
+
+}, 1000);
+
+/* CSV PARSER */
+function parseCSV(text){
+
+    const rows = text
+        .split("\n")
+        .map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+
+    const headers = rows[0];
+
+    return rows.slice(1).map(row => {
+
+        let obj = {};
+
+        headers.forEach((h,i) => {
+
+            obj[h.trim()] = (row[i] || '')
+                .replace(/"/g,'');
+
+        });
+
+        return obj;
+
+    });
+
 }
 
-/* LOAD */
-function load(){
-fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
-.then(r=>r.text())
-.then(csv=>{
-fullData=parseCSV(csv);
-render();
-});
+/* LOAD DATA */
+function loadData(){
+
+    fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
+    .then(r => r.text())
+    .then(csv => {
+
+        fullData = parseCSV(csv);
+
+        render();
+
+    });
+
 }
 
 /* STATUS */
 function getStatus(r){
-const s=(r['कामको अवस्था']||'').toLowerCase();
-if(s.includes('pend')) return 'pending';
-if(s.includes('comp')) return 'complete';
+
+    const s = (r['कामको अवस्था'] || '').toLowerCase();
+
+    if(s.includes('pend')) return 'pending';
+
+    if(s.includes('comp')) return 'complete';
+
+    return '';
+
 }
 
-/* TABLE */
-function buildTable(d){
-let html=`<table class="table"><thead><tr>
-<th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>स्थिति</th>
-</tr></thead><tbody>`;
-d.forEach(r=>{
-const st=getStatus(r);
-const badge=st==='pending'
-?'<span class="badge badge-pending">Pending</span>'
-:'<span class="badge badge-complete">Done</span>';
-html+=`<tr>
-<td>${r['निवेदन दर्ता नं.']||''}</td>
-<td>${r['विषय']||''}</td>
-<td>${r['निवेदकको नाम थर']||''}</td>
-<td>${r['फाटवाला कर्मचारी']||''}</td>
-<td>${badge}</td>
-</tr>`;
-});
-return html+"</tbody></table>";
+/* BUILD TABLE */
+function buildTable(data){
+
+    let html = `
+    <table class="table table-bordered align-middle">
+
+        <thead>
+
+            <tr>
+                <th>दर्ता नं.</th>
+                <th>दर्ता मिति</th>
+                <th>विषय</th>
+                <th>निवेदक</th>
+                <th>कर्मचारी</th>
+                <th>स्थिति</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+    `;
+
+    data.forEach(r => {
+
+        const st = getStatus(r);
+
+        const badge =
+            st === 'pending'
+            ? `<span class="badge badge-pending">Pending</span>`
+            : `<span class="badge badge-complete">Done</span>`;
+
+        html += `
+        <tr>
+
+            <td>${r['निवेदन दर्ता नं.'] || ''}</td>
+
+            <!-- BS DATE COLUMN VISIBLE -->
+            <td>${r['दर्ता मिति'] || ''}</td>
+
+            <td>${r['विषय'] || ''}</td>
+
+            <td>${r['निवेदकको नाम थर'] || ''}</td>
+
+            <td>${r['फाटवाला कर्मचारी'] || ''}</td>
+
+            <td>${badge}</td>
+
+        </tr>
+        `;
+
+    });
+
+    html += `
+        </tbody>
+    </table>
+    `;
+
+    return html;
+
 }
 
 /* CHART */
 function renderChart(data){
-if(chart) chart.destroy();
 
-const emp={};
-data.forEach(r=>{
-const e=r['फाटवाला कर्मचारी']||'Unknown';
-if(!emp[e]) emp[e]={p:0,c:0};
-const st=getStatus(r);
-if(st==='pending') emp[e].p++;
-if(st==='complete') emp[e].c++;
-});
+    if(chart) chart.destroy();
 
-const labels=Object.keys(emp);
-const maxY = Math.max(...labels.map(e=>emp[e].p + emp[e].c)) + 2;
+    const employees = {};
 
-chart=new Chart(employeeChart,{
-type:'bar',
-data:{
-labels,
-datasets:[
-{
-label:'Pending',
-data:labels.map(e=>emp[e].p),
-backgroundColor:'#f59e0b',
-stack:'total'
-},
-{
-label:'Completed',
-data:labels.map(e=>emp[e].c),
-backgroundColor:'#16a34a',
-stack:'total'
-}
-]
-},
-options:{
-responsive:true,
-maintainAspectRatio:false,
-animation:{duration:1400,easing:'easeOutQuart'},
-animations:{
-y:{
-from:maxY,
-delay:(ctx)=>ctx.dataIndex*120
-}
-},
-scales:{
-x:{stacked:true},
-y:{stacked:true,beginAtZero:true}
-}
-}
-});
+    data.forEach(r => {
+
+        const emp = r['फाटवाला कर्मचारी'] || 'Unknown';
+
+        if(!employees[emp]){
+
+            employees[emp] = {
+                pending:0,
+                complete:0
+            };
+
+        }
+
+        const st = getStatus(r);
+
+        if(st === 'pending')
+            employees[emp].pending++;
+
+        if(st === 'complete')
+            employees[emp].complete++;
+
+    });
+
+    const labels = Object.keys(employees);
+
+    chart = new Chart(employeeChart, {
+
+        type:'bar',
+
+        data:{
+
+            labels,
+
+            datasets:[
+
+                {
+                    label:'Pending',
+                    data:labels.map(l => employees[l].pending),
+                    backgroundColor:'#f59e0b',
+                    stack:'total'
+                },
+
+                {
+                    label:'Completed',
+                    data:labels.map(l => employees[l].complete),
+                    backgroundColor:'#16a34a',
+                    stack:'total'
+                }
+
+            ]
+
+        },
+
+        options:{
+
+            responsive:true,
+
+            maintainAspectRatio:false,
+
+            scales:{
+
+                x:{
+                    stacked:true
+                },
+
+                y:{
+                    stacked:true,
+                    beginAtZero:true
+                }
+
+            }
+
+        }
+
+    });
+
 }
 
-/* COUNTER */
+/* COUNTER ANIMATION */
 function animateValue(el,end){
-let startTime=null;
-let duration=900;
 
-function step(ts){
-if(!startTime) startTime=ts;
-const progress=Math.min((ts-startTime)/duration,1);
-el.textContent=Math.floor(progress*end);
-if(progress<1) requestAnimationFrame(step);
-}
-requestAnimationFrame(step);
-}
+    let startTime = null;
 
-/* PULSE */
-function pulseCounters(){
-document.querySelectorAll('.counter-card').forEach(c=>{
-c.classList.add("animate");
-setTimeout(()=>c.classList.remove("animate"),400);
-});
+    const duration = 1000;
+
+    function step(ts){
+
+        if(!startTime)
+            startTime = ts;
+
+        const progress = Math.min((ts - startTime) / duration, 1);
+
+        el.textContent = Math.floor(progress * end);
+
+        if(progress < 1)
+            requestAnimationFrame(step);
+
+    }
+
+    requestAnimationFrame(step);
+
 }
 
 /* RENDER */
 function render(){
-const p=fullData.filter(r=>getStatus(r)==='pending');
-const c=fullData.filter(r=>getStatus(r)==='complete');
 
-pendingTable.innerHTML=buildTable(p);
-completedTable.innerHTML=buildTable(c);
+    const pending = fullData.filter(
+        r => getStatus(r) === 'pending'
+    );
 
-pendingCount.textContent=p.length;
-completedCount.textContent=c.length;
+    const completed = fullData.filter(
+        r => getStatus(r) === 'complete'
+    );
 
-counters.innerHTML=`
-<div class="col-4"><div class="counter-card bg-pending">Pending<div id="pVal" class="big-number">0</div></div></div>
-<div class="col-4"><div class="counter-card bg-complete">Done<div id="cVal" class="big-number">0</div></div></div>
-<div class="col-4"><div class="counter-card bg-total">Total<div id="tVal" class="big-number">0</div></div></div>
-`;
+    pendingTable.innerHTML = buildTable(pending);
 
-animateValue(pVal,p.length);
-animateValue(cVal,c.length);
-animateValue(tVal,fullData.length);
+    completedTable.innerHTML = buildTable(completed);
 
-renderChart(fullData);
+    pendingCount.textContent = pending.length;
+
+    completedCount.textContent = completed.length;
+
+    counters.innerHTML = `
+
+    <div class="col-4">
+
+        <div class="counter-card bg-pending">
+
+            Pending
+
+            <div id="pVal" class="big-number">0</div>
+
+        </div>
+
+    </div>
+
+    <div class="col-4">
+
+        <div class="counter-card bg-complete">
+
+            Done
+
+            <div id="cVal" class="big-number">0</div>
+
+        </div>
+
+    </div>
+
+    <div class="col-4">
+
+        <div class="counter-card bg-total">
+
+            Total
+
+            <div id="tVal" class="big-number">0</div>
+
+        </div>
+
+    </div>
+
+    `;
+
+    animateValue(pVal, pending.length);
+
+    animateValue(cVal, completed.length);
+
+    animateValue(tVal, fullData.length);
+
+    renderChart(fullData);
+
 }
 
-/* LOOP */
-setInterval(()=>{
-pulseCounters();
-renderChart(fullData);
-},6000);
-
 /* INIT */
-load();
-setInterval(load,120000);
+loadData();
+
+/* AUTO REFRESH EVERY 2 MINUTES */
+setInterval(loadData, 120000);
 
 </script>
 
