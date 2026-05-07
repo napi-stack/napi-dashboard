@@ -16,7 +16,9 @@ body{
     margin:0;
     background:linear-gradient(135deg,#1e3a8a,#0ea5e9);
     font-family:'Segoe UI',sans-serif;
-    overflow:hidden;
+
+    /* FIXED */
+    overflow:auto;
 }
 
 /* HEADER */
@@ -58,12 +60,13 @@ body{
 /* DASHBOARD */
 .dashboard{
     padding:10px;
-    height:calc(100vh - 110px);
+    min-height:calc(100vh - 110px);
 }
 
 .col-md-6{
     display:flex;
     flex-direction:column;
+    margin-bottom:10px;
 }
 
 .panel{
@@ -74,6 +77,7 @@ body{
     display:flex;
     flex-direction:column;
     box-shadow:0 10px 25px rgba(0,0,0,0.15);
+    min-height:300px;
 }
 
 /* COUNTERS */
@@ -84,6 +88,9 @@ body{
     color:white;
     transition:0.3s;
     box-shadow:0 4px 12px rgba(0,0,0,0.2);
+
+    /* COUNTER ANIMATION */
+    animation:popin 0.7s ease;
 }
 
 .counter-card:hover{
@@ -128,8 +135,11 @@ body{
 
 /* TABLE */
 .table-container{
-    flex:1;
+    max-height:500px;
+
+    /* IMPORTANT */
     overflow-y:auto;
+
     border-radius:10px;
 }
 
@@ -180,11 +190,23 @@ body{
 
 /* CHART */
 #chartSection{
-    height:320px;
+    height:340px;
 }
 
 canvas{
-    max-height:260px;
+    max-height:280px;
+}
+
+/* ANIMATION */
+@keyframes popin{
+    from{
+        transform:scale(0.7);
+        opacity:0;
+    }
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
 }
 
 ::-webkit-scrollbar{
@@ -226,7 +248,7 @@ canvas{
 
 <div class="container-fluid dashboard">
 
-<div class="row h-100">
+<div class="row">
 
     <!-- LEFT -->
     <div class="col-md-6">
@@ -280,7 +302,8 @@ canvas{
 
 <script>
 
-const SHEET_ID = "1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
+const SHEET_ID =
+"1qvFhUaRIriIDLOqSU-Ua8U1608x0aBM-UcO32KtiXOk";
 
 let fullData = [];
 let chart;
@@ -303,8 +326,11 @@ setInterval(() => {
 function parseCSV(text){
 
     const rows = text
+        .trim()
         .split("\n")
-        .map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+        .map(r =>
+            r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+        );
 
     const headers = rows[0];
 
@@ -314,8 +340,8 @@ function parseCSV(text){
 
         headers.forEach((h,i) => {
 
-            obj[h.trim()] = (row[i] || '')
-                .replace(/"/g,'');
+            obj[h.trim()] =
+                (row[i] || '').replace(/"/g,'');
 
         });
 
@@ -328,7 +354,9 @@ function parseCSV(text){
 /* LOAD DATA */
 function loadData(){
 
-    fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`)
+    fetch(
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`
+    )
     .then(r => r.text())
     .then(csv => {
 
@@ -343,36 +371,39 @@ function loadData(){
 /* STATUS */
 function getStatus(r){
 
-    const s = (r['कामको अवस्था'] || '').toLowerCase();
+    const s =
+    (r['कामको अवस्था'] || '').toLowerCase();
 
-    if(s.includes('pend')) return 'pending';
+    if(s.includes('pend'))
+        return 'pending';
 
-    if(s.includes('comp')) return 'complete';
+    if(s.includes('comp'))
+        return 'complete';
 
     return '';
 
 }
 
-/* BUILD TABLE */
+/* TABLE */
 function buildTable(data){
 
     let html = `
-    <table class="table table-bordered align-middle">
+    <table class="table table-bordered">
 
-        <thead>
+    <thead>
 
-            <tr>
-                <th>दर्ता नं.</th>
-                <th>दर्ता मिति</th>
-                <th>विषय</th>
-                <th>निवेदक</th>
-                <th>कर्मचारी</th>
-                <th>स्थिति</th>
-            </tr>
+    <tr>
+        <th>दर्ता नं.</th>
+        <th>दर्ता मिति</th>
+        <th>विषय</th>
+        <th>निवेदक</th>
+        <th>कर्मचारी</th>
+        <th>स्थिति</th>
+    </tr>
 
-        </thead>
+    </thead>
 
-        <tbody>
+    <tbody>
     `;
 
     data.forEach(r => {
@@ -389,7 +420,6 @@ function buildTable(data){
 
             <td>${r['निवेदन दर्ता नं.'] || ''}</td>
 
-            <!-- BS DATE COLUMN VISIBLE -->
             <td>${r['दर्ता मिति'] || ''}</td>
 
             <td>${r['विषय'] || ''}</td>
@@ -406,7 +436,7 @@ function buildTable(data){
     });
 
     html += `
-        </tbody>
+    </tbody>
     </table>
     `;
 
@@ -417,17 +447,20 @@ function buildTable(data){
 /* CHART */
 function renderChart(data){
 
-    if(chart) chart.destroy();
+    if(chart){
+        chart.destroy();
+    }
 
-    const employees = {};
+    const emp = {};
 
     data.forEach(r => {
 
-        const emp = r['फाटवाला कर्मचारी'] || 'Unknown';
+        const e =
+        r['फाटवाला कर्मचारी'] || 'Unknown';
 
-        if(!employees[emp]){
+        if(!emp[e]){
 
-            employees[emp] = {
+            emp[e] = {
                 pending:0,
                 complete:0
             };
@@ -437,16 +470,18 @@ function renderChart(data){
         const st = getStatus(r);
 
         if(st === 'pending')
-            employees[emp].pending++;
+            emp[e].pending++;
 
         if(st === 'complete')
-            employees[emp].complete++;
+            emp[e].complete++;
 
     });
 
-    const labels = Object.keys(employees);
+    const labels = Object.keys(emp);
 
-    chart = new Chart(employeeChart, {
+    chart = new Chart(
+        document.getElementById('employeeChart'),
+        {
 
         type:'bar',
 
@@ -458,16 +493,16 @@ function renderChart(data){
 
                 {
                     label:'Pending',
-                    data:labels.map(l => employees[l].pending),
+                    data:labels.map(e => emp[e].pending),
                     backgroundColor:'#f59e0b',
-                    stack:'total'
+                    borderRadius:6
                 },
 
                 {
                     label:'Completed',
-                    data:labels.map(l => employees[l].complete),
+                    data:labels.map(e => emp[e].complete),
                     backgroundColor:'#16a34a',
-                    stack:'total'
+                    borderRadius:6
                 }
 
             ]
@@ -478,19 +513,21 @@ function renderChart(data){
 
             responsive:true,
 
-            maintainAspectRatio:false,
+            animation:{
+                duration:1800,
+                easing:'easeOutBounce'
+            },
+
+            plugins:{
+                legend:{
+                    position:'top'
+                }
+            },
 
             scales:{
-
-                x:{
-                    stacked:true
-                },
-
                 y:{
-                    stacked:true,
                     beginAtZero:true
                 }
-
             }
 
         }
@@ -502,46 +539,56 @@ function renderChart(data){
 /* COUNTER ANIMATION */
 function animateValue(el,end){
 
-    let startTime = null;
+    let start = 0;
 
-    const duration = 1000;
+    const duration = 1200;
 
-    function step(ts){
+    const startTime = performance.now();
 
-        if(!startTime)
-            startTime = ts;
+    function update(now){
 
-        const progress = Math.min((ts - startTime) / duration, 1);
+        const progress =
+        Math.min((now - startTime) / duration, 1);
 
-        el.textContent = Math.floor(progress * end);
+        const value =
+        Math.floor(progress * (end - start) + start);
 
-        if(progress < 1)
-            requestAnimationFrame(step);
+        el.textContent = value;
+
+        if(progress < 1){
+            requestAnimationFrame(update);
+        }
 
     }
 
-    requestAnimationFrame(step);
+    requestAnimationFrame(update);
 
 }
 
 /* RENDER */
 function render(){
 
-    const pending = fullData.filter(
+    const pending =
+    fullData.filter(
         r => getStatus(r) === 'pending'
     );
 
-    const completed = fullData.filter(
+    const completed =
+    fullData.filter(
         r => getStatus(r) === 'complete'
     );
 
-    pendingTable.innerHTML = buildTable(pending);
+    pendingTable.innerHTML =
+    buildTable(pending);
 
-    completedTable.innerHTML = buildTable(completed);
+    completedTable.innerHTML =
+    buildTable(completed);
 
-    pendingCount.textContent = pending.length;
+    pendingCount.textContent =
+    pending.length;
 
-    completedCount.textContent = completed.length;
+    completedCount.textContent =
+    completed.length;
 
     counters.innerHTML = `
 
@@ -583,12 +630,23 @@ function render(){
 
     `;
 
-    animateValue(pVal, pending.length);
+    /* FIXED COUNTER ANIMATION */
+    animateValue(
+        document.getElementById('pVal'),
+        pending.length
+    );
 
-    animateValue(cVal, completed.length);
+    animateValue(
+        document.getElementById('cVal'),
+        completed.length
+    );
 
-    animateValue(tVal, fullData.length);
+    animateValue(
+        document.getElementById('tVal'),
+        fullData.length
+    );
 
+    /* FIXED CHART */
     renderChart(fullData);
 
 }
@@ -596,8 +654,8 @@ function render(){
 /* INIT */
 loadData();
 
-/* AUTO REFRESH EVERY 2 MINUTES */
-setInterval(loadData, 120000);
+/* AUTO REFRESH */
+setInterval(loadData,120000);
 
 </script>
 
