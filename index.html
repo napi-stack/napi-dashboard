@@ -213,21 +213,32 @@ if(s.includes('comp')) return 'complete';
 /* TABLE */
 function buildTable(d){
 let html=`<table class="table"><thead><tr>
-<th>दर्ता नं.</th><th>विषय</th><th>नाम</th><th>कर्मचारी</th><th>स्थिति</th>
+<th>दर्ता नं.</th>
+<th>दर्ता मिति</th>
+<th>विषय</th>
+<th>नाम</th>
+<th>कर्मचारी</th>
+<th>स्थिति</th>
 </tr></thead><tbody>`;
+
 d.forEach(r=>{
+
 const st=getStatus(r);
+
 const badge=st==='pending'
 ?'<span class="badge badge-pending">Pending</span>'
 :'<span class="badge badge-complete">Done</span>';
+
 html+=`<tr>
 <td>${r['निवेदन दर्ता नं.']||''}</td>
+<td>${r['दर्ता मिति']||''}</td>
 <td>${r['विषय']||''}</td>
 <td>${r['निवेदकको नाम थर']||''}</td>
 <td>${r['फाटवाला कर्मचारी']||''}</td>
 <td>${badge}</td>
 </tr>`;
 });
+
 return html+"</tbody></table>";
 }
 
